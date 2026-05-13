@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Astroarch Interface — UI Mockups v0.2 · Zarletti-Osservatorio Jupiter</title>
+<style>
+  :root{
+    --bg:#0a0d12; --panel:#121821; --panel2:#1a212d; --line:#222b3a;
+    --text:#e6eaf2; --muted:#8a93a6;
+    --accent:#f5a623; --accent2:#5fb7ff;
+    --ok:#3ed598; --warn:#ffb454; --err:#ff5b6e;
+  }
+  body.night{
+    --accent:#ff3b3b; --accent2:#ff6b6b; --text:#ffb0b0; --muted:#a05858;
+    --ok:#ff8a8a; --bg:#080404; --panel:#160808; --panel2:#1f0a0a; --line:#3a1414;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:#05070b;color:var(--text);font-family:-apple-system,"Segoe UI",Roboto,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:rgba(8,10,15,.9);backdrop-filter:blur(10px);border-bottom:1px solid #1a2030}
+  header h1{font-size:15px;margin:0;font-weight:600}
+  header h1 span{color:var(--accent)}
+  header .toggle{display:flex;gap:8px;align-items:center;font-size:12px;color:#9aa3b6;cursor:pointer;user-select:none;padding:6px 12px;border:1px solid #232a3a;border-radius:20px}
+  header .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .stage{padding:36px 28px 80px;background:radial-gradient(1200px 600px at 30% -10%,#101727 0%,#05070b 60%);min-height:calc(100vh - 50px)}
+  .stage h2.section{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin:8px 0 22px;padding-left:6px;border-left:3px solid var(--accent)}
+  .row{display:flex;gap:34px;overflow-x:auto;padding:0 0 26px;margin-bottom:18px}
+  .phone{flex:0 0 auto;width:360px;height:760px;border-radius:42px;background:#000;padding:10px;box-shadow:0 30px 60px rgba(0,0,0,.55),0 0 0 2px #1a1f2b,0 0 0 8px #0a0d14;position:relative}
+  .phone::before{content:"";position:absolute;top:14px;left:50%;transform:translateX(-50%);width:110px;height:24px;background:#000;border-radius:14px;z-index:5}
+  .screen{width:100%;height:100%;border-radius:34px;overflow:hidden;background:var(--bg);display:flex;flex-direction:column;position:relative}
+  .statusbar{height:34px;display:flex;align-items:center;justify-content:space-between;padding:6px 22px 0;font-size:11px}
+  .statusbar .right{display:flex;gap:6px}
+  .topbar{padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+  .topbar .title{font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px}
+  .topbar .live{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 8px var(--ok);animation:pulse 1.6s infinite}
+  @keyframes pulse{50%{opacity:.4}}
+  .topbar .meta{font-size:11px;color:var(--muted)}
+  .topbar .ic{font-size:18px;color:var(--muted)}
+  .content{flex:1;overflow:auto;padding:12px 14px 80px}
+  .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin:14px 4px 6px;display:flex;justify-content:space-between;align-items:center}
+  .label a{color:var(--accent2);font-size:11px;text-transform:none;letter-spacing:0}
+  .target{background:linear-gradient(135deg,#16202e,#0e1620);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .target h2{margin:0;font-size:18px;font-weight:600}
+  .target h2 small{font-weight:400;color:var(--muted);font-size:12px;margin-left:8px}
+  .target .coords{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;margin-top:8px;font-size:11px;color:#b8c0d0;font-family:ui-monospace,monospace}
+  .target .coords b{color:var(--text);font-weight:500}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .grid4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-height:74px}
+  .card .h{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;display:flex;justify-content:space-between;align-items:center}
+  .card .v{font-size:16px;font-weight:600}
+  .card .s{font-size:10.5px;color:var(--muted)}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:9.5px;color:var(--ok)}
+  .badge .b{width:6px;height:6px;border-radius:50%;background:var(--ok)}
+  .badge.warn{color:var(--warn)} .badge.warn .b{background:var(--warn)}
+  .badge.err{color:var(--err)} .badge.err .b{background:var(--err)}
+  .badge.idle{color:var(--muted)} .badge.idle .b{background:var(--muted)}
+  .progress{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .progress .r{display:flex;justify-content:space-between;font-size:11.5px;margin-bottom:6px}
+  .bar{height:6px;background:#0c1320;border-radius:4px;overflow:hidden}
+  .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .nav{position:absolute;bottom:0;left:0;right:0;height:60px;background:rgba(10,14,20,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);padding:0 8px 6px}
+  .nav a{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:9.5px;color:var(--muted);text-decoration:none;padding-top:8px}
+  .nav a.active{color:var(--accent)}
+  .nav .ic{font-size:17px;line-height:1}
+  .preview{border-radius:12px;overflow:hidden;border:1px solid var(--line);background:#000;position:relative;aspect-ratio:4/3}
+  .preview .sky{position:absolute;inset:0;background:radial-gradient(circle at 30% 40%,rgba(180,200,255,.2) 0,transparent 6%),radial-gradient(circle at 50% 50%,rgba(255,180,140,.45) 0,transparent 24%),radial-gradient(circle at 65% 55%,rgba(255,200,160,.18) 0,transparent 14%),radial-gradient(2px 2px at 12% 22%,#fff 99%,transparent),radial-gradient(1px 1px at 24% 70%,#fff 99%,transparent),radial-gradient(2px 2px at 80% 18%,#dde 99%,transparent),radial-gradient(1px 1px at 88% 62%,#fff 99%,transparent),radial-gradient(1px 1px at 38% 14%,#fff 99%,transparent),radial-gradient(1.5px 1.5px at 58% 82%,#fff 99%,transparent),radial-gradient(1px 1px at 8% 78%,#fff 99%,transparent),radial-gradient(1px 1px at 72% 88%,#fff 99%,transparent),radial-gradient(1px 1px at 48% 36%,#fff 99%,transparent),#050810}
+  .preview .hud{position:absolute;left:8px;bottom:8px;right:8px;display:flex;justify-content:space-between;font-size:10px;color:#cfd6e6;font-family:ui-monospace,monospace;text-shadow:0 1px 2px #000}
+  .preview .hud-top{position:absolute;left:8px;top:8px;right:8px;display:flex;justify-content:space-between;font-size:10px;color:#cfd6e6;font-family:ui-monospace,monospace;text-shadow:0 1px 2px #000}
+  .preview .reticle{position:absolute;left:50%;top:50%;width:60px;height:60px;transform:translate(-50%,-50%);border:1px dashed rgba(245,166,35,.5);border-radius:50%}
+  .field{display:flex;justify-content:space-between;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:13px;margin-top:6px}
+  .field b{color:var(--muted);font-weight:500;font-size:10.5px;text-transform:uppercase;letter-spacing:1px}
+  .field span{color:var(--text);font-weight:500}
+  .field .stepper{display:inline-flex;gap:4px;align-items:center}
+  .field .stepper button{width:22px;height:22px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--text);font-weight:600}
+  .field-num{font-family:ui-monospace,monospace}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(180deg,var(--accent),#c98612);color:#1a1305;font-weight:700;padding:11px;border-radius:11px;font-size:12.5px;letter-spacing:.4px;box-shadow:0 6px 14px rgba(245,166,35,.22)}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);box-shadow:none;font-weight:500}
+  .btn.danger{background:linear-gradient(180deg,#ff5b6e,#b3303f);color:#fff;box-shadow:0 6px 14px rgba(255,91,110,.2)}
+  .btn.ok{background:linear-gradient(180deg,#3ed598,#1f8b62);color:#031910;box-shadow:0 6px 14px rgba(62,213,152,.2)}
+  .btn.sm{padding:8px 10px;font-size:11.5px}
+  .joypad{margin:6px auto;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#1a2030 0%,#0c1220 70%);border:1px solid var(--line);position:relative}
+  .joypad .arrow{position:absolute;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:11px;background:var(--panel2);border:1px solid var(--line);font-size:16px;color:var(--text)}
+  .joypad .arrow.n{top:6px;left:50%;transform:translateX(-50%)}
+  .joypad .arrow.s{bottom:6px;left:50%;transform:translateX(-50%)}
+  .joypad .arrow.w{left:6px;top:50%;transform:translateY(-50%)}
+  .joypad .arrow.e{right:6px;top:50%;transform:translateY(-50%)}
+  .joypad .center{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:54px;height:54px;border-radius:50%;background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+  .search{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:9px 13px;display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+  .obj{display:flex;align-items:center;justify-content:space-between;padding:9px 10px;border-bottom:1px solid var(--line);font-size:12.5px}
+  .obj .name b{font-weight:600;color:var(--text)}
+  .obj .name small{color:var(--muted);margin-left:6px;font-size:11px}
+  .obj .alt{font-family:ui-monospace,monospace;color:#b8c0d0;font-size:11.5px}
+  .chips{display:flex;gap:5px;flex-wrap:wrap}
+  .chip{font-size:10.5px;padding:5px 9px;border-radius:18px;background:var(--panel);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+  .chip.on{background:rgba(245,166,35,.15);color:var(--accent);border-color:rgba(245,166,35,.4)}
+  .chip.ok{background:rgba(62,213,152,.12);color:var(--ok);border-color:rgba(62,213,152,.35)}
+  .graph{margin-top:8px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:8px;height:130px;position:relative;overflow:hidden}
+  .graph svg{width:100%;height:100%}
+  .graph .gridlines line{stroke:#1d2535;stroke-width:.5}
+  .graph .ra{stroke:var(--accent);fill:none;stroke-width:1.5}
+  .graph .dec{stroke:var(--accent2);fill:none;stroke-width:1.5}
+  .graph .vc{stroke:var(--accent);fill:none;stroke-width:2}
+  .graph .pt{fill:var(--accent2)}
+  .legend{display:flex;gap:14px;font-size:10.5px;color:var(--muted);margin-top:4px;padding:0 4px}
+  .legend i{display:inline-block;width:10px;height:2px;background:var(--accent);margin-right:6px;vertical-align:middle}
+  .legend .b i{background:var(--accent2)}
+  .galgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
+  .galgrid .t{aspect-ratio:1;border-radius:7px;background:#0a0e16;border:1px solid var(--line);position:relative;overflow:hidden}
+  .galgrid .t::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,rgba(255,200,160,.4) 0,transparent 35%),radial-gradient(2px 2px at 30% 30%,#fff 99%,transparent),radial-gradient(1px 1px at 70% 60%,#fff 99%,transparent),radial-gradient(1.5px 1.5px at 50% 80%,#fff 99%,transparent),#050810}
+  .galgrid .t span{position:absolute;left:4px;bottom:3px;font-size:9px;color:#cfd6e6;text-shadow:0 1px 2px #000;font-family:ui-monospace,monospace;z-index:2}
+  .connect{padding:24px 22px;display:flex;flex-direction:column;justify-content:center;height:100%}
+  .logo{font-size:28px;font-weight:700;letter-spacing:-.5px;text-align:center}
+  .logo span{color:var(--accent)}
+  .tagline{text-align:center;color:var(--muted);font-size:12px;margin:6px 0 26px}
+  .connect .field{padding:13px;display:block}
+  .connect .field b{display:block;margin-bottom:4px;font-size:10px}
+  .connect .field span{font-family:ui-monospace,monospace}
+  .ts-badge{margin-top:14px;padding:10px 14px;border-radius:10px;background:rgba(95,183,255,.08);border:1px solid rgba(95,183,255,.25);font-size:11px;color:var(--accent2);display:flex;align-items:center;gap:8px}
+  .caption{text-align:center;color:#697288;font-size:12px;margin-top:14px;font-weight:500}
+  /* sequence rows */
+  .seqrow{display:grid;grid-template-columns:14px 30px 1fr 60px 50px;gap:8px;padding:9px 8px;border-bottom:1px solid var(--line);align-items:center;font-size:11.5px}
+  .seqrow .dot{width:8px;height:8px;border-radius:50%;background:var(--ok)}
+  .seqrow .dot.idle{background:var(--muted)} .seqrow .dot.run{background:var(--accent);box-shadow:0 0 8px var(--accent)}
+  .seqrow .filt{font-weight:700;text-align:center;color:var(--accent)}
+  .seqrow .info b{color:var(--text);font-weight:600}
+  .seqrow .info small{color:var(--muted);display:block;font-size:10px;margin-top:2px}
+  .seqrow .cnt{font-family:ui-monospace,monospace;text-align:right;color:#b8c0d0}
+  .seqrow .pct{font-size:10px;color:var(--muted);text-align:right}
+  /* INDI panel device list */
+  .indidev{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--panel);border:1px solid var(--line);border-radius:11px;margin-top:6px}
+  .indidev .l{display:flex;align-items:center;gap:10px}
+  .indidev .ico{width:32px;height:32px;border-radius:9px;background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--accent)}
+  .indidev .name b{font-size:12.5px;display:block;color:var(--text)}
+  .indidev .name small{font-size:10.5px;color:var(--muted)}
+  .indidev .arrow{color:var(--muted);font-size:14px}
+  /* indi tabs */
+  .tabs{display:flex;gap:4px;overflow-x:auto;padding:6px 0 8px;border-bottom:1px solid var(--line);margin-bottom:6px}
+  .tabs .tab{font-size:11px;padding:6px 11px;border-radius:7px;background:var(--panel);color:var(--muted);white-space:nowrap;border:1px solid var(--line)}
+  .tabs .tab.on{background:var(--accent);color:#1a1305;border-color:var(--accent)}
+  /* INDI property */
+  .prop{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 11px;margin-top:6px}
+  .prop .ph{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;display:flex;justify-content:space-between;margin-bottom:6px}
+  .prop .ph .led{width:7px;height:7px;border-radius:50%;background:var(--ok);display:inline-block;margin-right:4px}
+  .prop .ph .led.warn{background:var(--warn)} .prop .ph .led.err{background:var(--err)} .prop .ph .led.idle{background:var(--muted)}
+  .prop .pv{font-size:13px;font-family:ui-monospace,monospace;color:var(--text)}
+  .prop .pv .lbl{color:var(--muted);font-size:11px;margin-right:6px}
+  .swrow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:4px}
+  .sw{font-size:10.5px;text-align:center;padding:6px;border-radius:7px;background:var(--panel2);color:var(--muted);border:1px solid var(--line)}
+  .sw.on{background:rgba(245,166,35,.15);color:var(--accent);border-color:rgba(245,166,35,.45)}
+  /* drawer */
+  .drawer{position:absolute;left:0;top:0;bottom:0;width:75%;background:#0c121d;border-right:1px solid var(--line);padding:20px 16px;display:flex;flex-direction:column;gap:4px;z-index:30}
+  .drawer h3{margin:0 0 4px 4px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:2px}
+  .drawer a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;color:var(--text);font-size:13px;text-decoration:none}
+  .drawer a:hover,.drawer a.on{background:var(--panel2)}
+  .drawer a .ic{width:22px;text-align:center;color:var(--accent)}
+  .drawer a small{margin-left:auto;color:var(--muted);font-size:10.5px}
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:20}
+  /* file row */
+  .filerow{display:grid;grid-template-columns:38px 1fr auto;gap:10px;padding:9px 8px;border-bottom:1px solid var(--line);align-items:center;font-size:12px}
+  .filerow .thumb{width:38px;height:38px;border-radius:7px;background:radial-gradient(circle at 50% 50%,rgba(255,200,160,.45) 0,transparent 30%),#050810;border:1px solid var(--line)}
+  .filerow b{display:block;font-size:12.5px;color:var(--text);font-weight:600}
+  .filerow small{color:var(--muted);font-size:10.5px}
+  .filerow .meta{font-family:ui-monospace,monospace;color:var(--muted);font-size:10.5px;text-align:right}
+  /* scheduler */
+  .jobrow{padding:10px 12px;border-radius:11px;background:var(--panel);border:1px solid var(--line);margin-top:6px}
+  .jobrow .r1{display:flex;justify-content:space-between;align-items:center}
+  .jobrow b{font-size:13px}
+  .jobrow .when{font-size:10.5px;color:var(--muted);font-family:ui-monospace,monospace}
+  .jobrow .det{font-size:10.5px;color:var(--muted);margin-top:4px}
+  .jobrow.run{border-color:var(--accent);box-shadow:0 0 0 1px rgba(245,166,35,.25)}
+  /* observatory */
+  .domeillu{height:130px;background:linear-gradient(180deg,#0a1220 0%,#16202e 100%);border:1px solid var(--line);border-radius:11px;position:relative;overflow:hidden}
+  .domeillu::before{content:"";position:absolute;left:50%;bottom:14px;width:160px;height:80px;transform:translateX(-50%);border:2px solid #2a3a52;border-bottom:none;border-radius:80px 80px 0 0;background:radial-gradient(ellipse at center top,#1a2638 0%,#0e1726 80%)}
+  .domeillu::after{content:"";position:absolute;left:50%;bottom:14px;width:34px;height:80px;transform:translateX(-50%);border-radius:34px 34px 0 0;background:linear-gradient(180deg,#000 0%,#0a1220 100%);border-left:1px solid var(--ok);border-right:1px solid var(--ok);box-shadow:0 0 12px rgba(62,213,152,.5)}
+</style>
+</head>
+<body>
+<header>
+  <h1>Astroarch <span>Interface</span> · UI Preview v0.2 — clone INDI/Ekos completo · Zarletti-Osservatorio Jupiter</h1>
+  <div class="toggle" onclick="document.body.classList.toggle('night')">
+    <span class="dot"></span> Tema: <b style="color:var(--text);margin-left:2px">Pro / Notte</b>
+  </div>
+</header>
+
+<div class="stage">
+
+<!-- ROW 1: CORE -->
+<h2 class="section">CORE · Login, Dashboard, Drawer, Mount</h2>
+<div class="row">
+
+  <!-- LOGIN -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:42</span><span class="right">📶 🔋 87%</span></div>
+    <div class="connect">
+      <div class="logo">Astroarch <span>Interface</span></div>
+      <div class="tagline">Zarletti-Osservatorio Jupiter · v0.2</div>
+      <div class="field"><b>HOST (TAILSCALE)</b><span>100.74.22.40</span></div>
+      <div class="field"><b>PORTA</b><span>8765</span></div>
+      <div class="field"><b>TOKEN</b><span>••••••••••••</span></div>
+      <div style="margin-top:18px"><div class="btn">CONNETTI</div></div>
+      <div class="ts-badge">🔒 WireGuard via Tailscale · cifrato end-to-end</div>
+      <div style="margin-top:14px;font-size:10.5px;color:var(--muted);text-align:center">Profili salvati: <b style="color:var(--text)">Osservatorio · Trasferta · Test</b></div>
+    </div>
+  </div></div>
+  <div class="caption">① Login</div>
+  </div>
+
+  <!-- DASHBOARD CON PREVIEW -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:43</span><span class="right">📶 🔋 87%</span></div>
+    <div class="topbar">
+      <div class="title"><span class="live"></span> Dashboard</div>
+      <div class="meta">EQ8 · ASI2600 · −2.3°C</div>
+    </div>
+    <div class="content">
+      <div class="target">
+        <h2>M 31 <small>Andromeda</small></h2>
+        <div class="coords">
+          <span>RA <b>00h 42m 44s</b></span><span>Alt <b>68°</b></span>
+          <span>Dec <b>+41° 16′ 09″</b></span><span>Az <b>112°</b></span>
+        </div>
+      </div>
+
+      <div class="label">Ultimo scatto · Light L #012</div>
+      <div class="preview" style="aspect-ratio:5/3">
+        <div class="sky"></div>
+        <div class="hud-top"><span>L · 180s · g100</span><span>21:43:22</span></div>
+        <div class="hud"><span>HFR 2.31 · ★ 184</span><span>FWHM 2.4″</span></div>
+      </div>
+
+      <div class="grid2" style="margin-top:10px">
+        <div class="card"><div class="h">Mount<span class="badge"><span class="b"></span>track</span></div><div class="v">Sidereal</div><div class="s">slew 0.0″/s</div></div>
+        <div class="card"><div class="h">Camera<span class="badge"><span class="b"></span>cool</span></div><div class="v">−10.0 °C</div><div class="s">power 38%</div></div>
+        <div class="card"><div class="h">Guide<span class="badge"><span class="b"></span>active</span></div><div class="v">RMS 0.62″</div><div class="s">SNR 38</div></div>
+        <div class="card"><div class="h">Focus<span class="badge idle"><span class="b"></span>idle</span></div><div class="v">24350</div><div class="s">HFR 2.31</div></div>
+      </div>
+
+      <div class="progress">
+        <div class="r"><b>Sequenza M31 LRGB</b><span style="color:var(--muted)">12 / 80</span></div>
+        <div class="bar"><i style="width:15%"></i></div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:4px">L 12/20 · R 0/20 · G 0/20 · B 0/20 · ETA 6h 32m</div>
+      </div>
+
+      <div class="grid2" style="margin-top:10px">
+        <div class="card"><div class="h">Cielo</div><div class="v" style="font-size:13px">SQM 21.3</div><div class="s">Bortle 4 · clear</div></div>
+        <div class="card"><div class="h">Tetto</div><div class="v" style="font-size:13px;color:var(--ok)">Aperto</div><div class="s">ESP32 · vento 4 km/h</div></div>
+      </div>
+    </div>
+    <div class="nav">
+      <a class="active"><span class="ic">●</span><span>Dash</span></a>
+      <a><span class="ic">◎</span><span>Mount</span></a>
+      <a><span class="ic">▣</span><span>Capture</span></a>
+      <a><span class="ic">◈</span><span>Guide</span></a>
+      <a><span class="ic">≡</span><span>Menu</span></a>
+    </div>
+  </div></div>
+  <div class="caption">② Dashboard (con preview live)</div>
+  </div>
+
+  <!-- DRAWER -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:43</span><span class="right">📶 🔋 87%</span></div>
+    <div class="scrim"></div>
+    <div class="drawer">
+      <div style="font-size:14px;font-weight:700;margin:0 4px 4px">Astroarch <span style="color:var(--accent)">Interface</span></div>
+      <div style="font-size:10.5px;color:var(--muted);margin:0 4px 14px">Zarletti-Osservatorio Jupiter · 100.74.22.40</div>
+      <h3>Principale</h3>
+      <a class="on"><span class="ic">●</span> Dashboard</a>
+      <a><span class="ic">◎</span> Mount</a>
+      <a><span class="ic">▣</span> Capture <small>12/80</small></a>
+      <a><span class="ic">◈</span> Guide <small>RMS 0.62″</small></a>
+      <h3 style="margin-top:14px">Moduli Ekos</h3>
+      <a><span class="ic">⊙</span> Focus</a>
+      <a><span class="ic">✛</span> Align <small>solver</small></a>
+      <a><span class="ic">⏱</span> Scheduler <small>2 jobs</small></a>
+      <a><span class="ic">◐</span> Observatory</a>
+      <a><span class="ic">📊</span> Analyze</a>
+      <h3 style="margin-top:14px">Sistema</h3>
+      <a><span class="ic">⚙</span> INDI Panel <small>9 driver</small></a>
+      <a><span class="ic">📁</span> Files</a>
+      <a><span class="ic">📜</span> Logs</a>
+      <a><span class="ic">🖥</span> noVNC desktop</a>
+      <a style="color:var(--err)"><span class="ic">⏻</span> Disconnetti</a>
+    </div>
+  </div></div>
+  <div class="caption">③ Drawer (menu completo)</div>
+  </div>
+
+  <!-- MOUNT -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:44</span><span class="right">📶 🔋 86%</span></div>
+    <div class="topbar">
+      <div class="title">◎ Mount · EQ8</div>
+      <div class="ic">⚙</div>
+    </div>
+    <div class="content">
+      <div class="search">🔍 Cerca M·NGC·IC·planet…</div>
+      <div style="margin-top:6px">
+        <div class="obj"><span class="name"><b>M 42</b><small>Orion Nebula</small></span><span class="alt">Alt 41°</span></div>
+        <div class="obj"><span class="name"><b>M 45</b><small>Pleiades</small></span><span class="alt">Alt 22°</span></div>
+        <div class="obj"><span class="name"><b>NGC 7000</b><small>North America</small></span><span class="alt">Alt 58°</span></div>
+      </div>
+
+      <div class="grid2" style="margin-top:8px">
+        <div class="card"><div class="h">Pier Side</div><div class="v" style="font-size:14px">East</div></div>
+        <div class="card"><div class="h">Meridian</div><div class="v" style="font-size:14px">+02h 12m</div></div>
+      </div>
+
+      <div class="label">Slew</div>
+      <div class="joypad">
+        <div class="arrow n">▲</div><div class="arrow s">▼</div>
+        <div class="arrow w">◀</div><div class="arrow e">▶</div>
+        <div class="center">16×</div>
+      </div>
+      <div class="chips" style="justify-content:center;margin-top:4px">
+        <span class="chip">1×</span><span class="chip">8×</span>
+        <span class="chip on">16×</span><span class="chip">64×</span><span class="chip">MAX</span>
+      </div>
+
+      <div class="row3" style="margin-top:12px">
+        <div class="btn ghost sm">PARK</div>
+        <div class="btn ghost sm">SYNC</div>
+        <div class="btn danger sm">STOP</div>
+      </div>
+
+      <div class="label">Tracking · Limits · Flip</div>
+      <div class="chips">
+        <span class="chip on">Sidereal</span><span class="chip">Lunar</span><span class="chip">Solar</span><span class="chip">Off</span>
+      </div>
+      <div class="field"><b>MERIDIAN FLIP</b><span style="color:var(--ok)">Auto · +02h 12m</span></div>
+      <div class="field"><b>ALT LIMIT</b><span>15° / 85°</span></div>
+      <div class="field"><b>HA LIMIT</b><span>±06h 00m</span></div>
+    </div>
+    <div class="nav">
+      <a><span class="ic">●</span><span>Dash</span></a>
+      <a class="active"><span class="ic">◎</span><span>Mount</span></a>
+      <a><span class="ic">▣</span><span>Capture</span></a>
+      <a><span class="ic">◈</span><span>Guide</span></a>
+      <a><span class="ic">≡</span><span>Menu</span></a>
+    </div>
+  </div></div>
+  <div class="caption">④ Mount (completo)</div>
+  </div>
+
+</div>
+
+<!-- ROW 2: ACQUISITION -->
+<h2 class="section">ACQUISITION · Capture, Camera Live, Focus, Align</h2>
+<div class="row">
+
+  <!-- CAPTURE -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:45</span><span class="right">📶 🔋 86%</span></div>
+    <div class="topbar">
+      <div class="title"><span class="live"></span> Capture</div>
+      <div class="meta">12 / 80 · ETA 6h32m</div>
+    </div>
+    <div class="content">
+      <div class="label">Sequenza · M31 LRGB <a>+ Aggiungi</a></div>
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden">
+        <div class="seqrow"><span class="dot run"></span><span class="filt">L</span>
+          <span class="info"><b>Light</b><small>180s · g100 · bin1 · −10°</small></span>
+          <span class="cnt">12/20</span><span class="pct">60%</span></div>
+        <div class="seqrow"><span class="dot idle"></span><span class="filt" style="color:var(--err)">R</span>
+          <span class="info"><b>Light</b><small>180s · g100 · bin1</small></span>
+          <span class="cnt">0/20</span><span class="pct">—</span></div>
+        <div class="seqrow"><span class="dot idle"></span><span class="filt" style="color:var(--ok)">G</span>
+          <span class="info"><b>Light</b><small>180s · g100 · bin1</small></span>
+          <span class="cnt">0/20</span><span class="pct">—</span></div>
+        <div class="seqrow"><span class="dot idle"></span><span class="filt" style="color:var(--accent2)">B</span>
+          <span class="info"><b>Light</b><small>180s · g100 · bin1</small></span>
+          <span class="cnt">0/20</span><span class="pct">—</span></div>
+        <div class="seqrow" style="border-bottom:none"><span class="dot idle"></span><span class="filt" style="color:var(--muted)">—</span>
+          <span class="info"><b>Dark</b><small>180s · g100 · bin1</small></span>
+          <span class="cnt">0/20</span><span class="pct">—</span></div>
+      </div>
+
+      <div class="label">Parametri scatto attuale</div>
+      <div class="row2">
+        <div class="field"><b>EXPOSURE</b>
+          <span class="stepper"><button>−</button><span class="field-num">180 s</span><button>+</button></span></div>
+        <div class="field"><b>GAIN</b>
+          <span class="stepper"><button>−</button><span class="field-num">100</span><button>+</button></span></div>
+      </div>
+      <div class="row2">
+        <div class="field"><b>COUNT</b>
+          <span class="stepper"><button>−</button><span class="field-num">20</span><button>+</button></span></div>
+        <div class="field"><b>DELAY</b>
+          <span class="stepper"><button>−</button><span class="field-num">2 s</span><button>+</button></span></div>
+      </div>
+      <div class="row3">
+        <div class="field"><b>BIN</b><span>1×1</span></div>
+        <div class="field"><b>FILTRO</b><span>L</span></div>
+        <div class="field"><b>FRAME</b><span>Light</span></div>
+      </div>
+      <div class="row2">
+        <div class="field"><b>OFFSET</b><span>50</span></div>
+        <div class="field"><b>FORMAT</b><span>FITS</span></div>
+      </div>
+      <div class="field"><b>ROI</b><span>full · 6248×4176</span></div>
+
+      <div class="label">Presets <a>salva</a></div>
+      <div class="chips">
+        <span class="chip on">M31 LRGB</span><span class="chip">SHO 5nm</span>
+        <span class="chip">Lunar HD</span><span class="chip">Flat</span><span class="chip">Bias</span>
+      </div>
+
+      <div class="row2" style="margin-top:12px">
+        <div class="btn">▶ START</div>
+        <div class="btn ghost">■ PAUSE</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a><span class="ic">●</span><span>Dash</span></a>
+      <a><span class="ic">◎</span><span>Mount</span></a>
+      <a class="active"><span class="ic">▣</span><span>Capture</span></a>
+      <a><span class="ic">◈</span><span>Guide</span></a>
+      <a><span class="ic">≡</span><span>Menu</span></a>
+    </div>
+  </div></div>
+  <div class="caption">⑤ Capture (sequenza completa, count, presets)</div>
+  </div>
+
+  <!-- CAMERA LIVE -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:45</span><span class="right">📶 🔋 86%</span></div>
+    <div class="topbar">
+      <div class="title"><span class="live"></span> Live View</div>
+      <div class="ic">⛶</div>
+    </div>
+    <div class="content">
+      <div class="preview" style="aspect-ratio:1/1">
+        <div class="sky"></div>
+        <div class="reticle"></div>
+        <div class="hud-top"><span>L · 180.0s</span><span style="color:var(--ok)">★ 184 · HFR 2.31</span></div>
+        <div class="hud"><span>median 1820 · max 65500</span><span>FWHM 2.4″</span></div>
+      </div>
+
+      <div class="chips" style="margin-top:8px">
+        <span class="chip on">Auto stretch</span>
+        <span class="chip">Hist</span>
+        <span class="chip">Bahtinov</span>
+        <span class="chip">Star detect</span>
+        <span class="chip">Crosshair</span>
+        <span class="chip">Zoom 1:1</span>
+      </div>
+
+      <div class="label">Cooler</div>
+      <div class="field"><b>TARGET</b><span>−10.0 °C</span></div>
+      <div class="field"><b>CURRENT</b><span style="color:var(--ok)">−10.0 °C · power 38%</span></div>
+
+      <div class="label">Istogramma</div>
+      <div style="height:60px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px">
+        <svg viewBox="0 0 280 50" preserveAspectRatio="none" style="width:100%;height:100%">
+          <polyline points="0,48 20,42 40,30 60,12 80,8 100,14 120,22 140,30 160,36 180,40 200,43 220,45 240,47 260,48 280,49" fill="rgba(245,166,35,.3)" stroke="var(--accent)" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <div class="row2" style="margin-top:10px">
+        <div class="btn">▶ FRAME</div>
+        <div class="btn ghost">▣ LOOP</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a><span class="ic">●</span><span>Dash</span></a>
+      <a><span class="ic">◎</span><span>Mount</span></a>
+      <a class="active"><span class="ic">▣</span><span>Capture</span></a>
+      <a><span class="ic">◈</span><span>Guide</span></a>
+      <a><span class="ic">≡</span><span>Menu</span></a>
+    </div>
+  </div></div>
+  <div class="caption">⑥ Live View (con istogramma)</div>
+  </div>
+
+  <!-- FOCUS DEDICATA -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:46</span><span class="right">📶 🔋 86%</span></div>
+    <div class="topbar">
+      <div class="title">⊙ Focus · ZWO EAF</div>
+      <div class="ic">⚙</div>
+    </div>
+    <div class="content">
+      <div class="grid3">
+        <div class="card"><div class="h">Position</div><div class="v">24350</div><div class="s">max 60000</div></div>
+        <div class="card"><div class="h">HFR</div><div class="v" style="color:var(--ok)">2.31</div><div class="s">target 2.0</div></div>
+        <div class="card"><div class="h">Temp</div><div class="v">−2.3°</div><div class="s">comp on</div></div>
+      </div>
+
+      <div class="label">V-Curve · run #4</div>
+      <div class="graph" style="height:150px">
+        <svg viewBox="0 0 300 140" preserveAspectRatio="none">
+          <g class="gridlines">
+            <line x1="0" y1="35" x2="300" y2="35"/>
+            <line x1="0" y1="70" x2="300" y2="70"/>
+            <line x1="0" y1="105" x2="300" y2="105"/>
+            <line x1="75" y1="0" x2="75" y2="140"/>
+            <line x1="150" y1="0" x2="150" y2="140"/>
+            <line x1="225" y1="0" x2="225" y2="140"/>
+          </g>
+          <polyline class="vc" points="20,30 50,52 80,72 110,90 140,102 165,108 175,109 185,108 200,103 230,90 260,68 290,42"/>
+          <circle class="pt" cx="20" cy="30" r="3"/><circle class="pt" cx="50" cy="52" r="3"/>
+          <circle class="pt" cx="80" cy="72" r="3"/><circle class="pt" cx="110" cy="90" r="3"/>
+          <circle class="pt" cx="140" cy="102" r="3"/><circle class="pt" cx="175" cy="109" r="3"/>
+          <circle class="pt" cx="200" cy="103" r="3"/><circle class="pt" cx="230" cy="90" r="3"/>
+          <circle class="pt" cx="260" cy="68" r="3"/><circle class="pt" cx="290" cy="42" r="3"/>
+          <line x1="175" y1="0" x2="175" y2="140" stroke="var(--ok)" stroke-dasharray="3 3" stroke-width="1"/>
+        </svg>
+      </div>
+      <div class="legend"><span style="color:var(--ok)">● best 24350 (HFR 2.10)</span><span style="margin-left:auto">step 50 · 10 pt</span></div>
+
+      <div class="label">Algoritmo</div>
+      <div class="chips">
+        <span class="chip">Iterative</span>
+        <span class="chip on">Linear 1 Pass</span>
+        <span class="chip">Polynomial</span>
+      </div>
+
+      <div class="label">Parametri</div>
+      <div class="row2">
+        <div class="field"><b>STEP SIZE</b><span>50</span></div>
+        <div class="field"><b>MAX TRAVEL</b><span>10000</span></div>
+      </div>
+      <div class="row2">
+        <div class="field"><b>TOLERANCE</b><span>5%</span></div>
+        <div class="field"><b>FILTER</b><span>L</span></div>
+      </div>
+      <div class="field"><b>TEMP COMP</b><span style="color:var(--ok)">on · 4 step/°C</span></div>
+
+      <div class="label">Manuale</div>
+      <div class="row3">
+        <div class="btn ghost sm">−1000</div>
+        <div class="btn ghost sm">−100</div>
+        <div class="btn ghost sm">−10</div>
+      </div>
+      <div class="row3">
+        <div class="btn ghost sm">+10</div>
+        <div class="btn ghost sm">+100</div>
+        <div class="btn ghost sm">+1000</div>
+      </div>
+
+      <div class="row2" style="margin-top:10px">
+        <div class="btn">▶ AUTOFOCUS</div>
+        <div class="btn ghost">⌖ FRAME</div>
+      </div>
+    </div>
+  </div></div>
+  <div class="caption">⑦ Focus dedicata (V-curve + manuale)</div>
+  </div>
+
+  <!-- ALIGN -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:47</span><span class="right">📶 🔋 85%</span></div>
+    <div class="topbar">
+      <div class="title">✛ Align · Astrometry</div>
+      <div class="ic">⚙</div>
+    </div>
+    <div class="content">
+      <div class="preview" style="aspect-ratio:5/3">
+        <div class="sky"></div>
+        <div class="reticle"></div>
+        <div class="hud-top"><span style="color:var(--ok)">● solved</span><span>2.31″/px</span></div>
+        <div class="hud"><span>RA 00h 42m 41s</span><span>Δ 0.6′</span></div>
+      </div>
+
+      <div class="grid2" style="margin-top:8px">
+        <div class="card"><div class="h">Solver</div><div class="v" style="font-size:14px">StellarSolver</div><div class="s">offline · index 4200</div></div>
+        <div class="card"><div class="h">Last solve</div><div class="v" style="font-size:14px;color:var(--ok)">3.2 s</div><div class="s">↗ 0.3° drift</div></div>
+      </div>
+
+      <div class="label">Modalità</div>
+      <div class="chips">
+        <span class="chip on">Solve &amp; Sync</span>
+        <span class="chip">Slew to Target</span>
+        <span class="chip">Polar Align</span>
+        <span class="chip">Mosaic</span>
+      </div>
+
+      <div class="label">Parametri</div>
+      <div class="row2">
+        <div class="field"><b>EXP</b><span>5 s</span></div>
+        <div class="field"><b>BIN</b><span>2×2</span></div>
+      </div>
+      <div class="field"><b>SCALE</b><span>2.10 – 2.50 ″/px</span></div>
+      <div class="field"><b>RADIUS</b><span>15°</span></div>
+      <div class="field"><b>DOWNSAMPLE</b><span>2×</span></div>
+
+      <div class="label">Polar Alignment</div>
+      <div class="field"><b>AZ ERROR</b><span style="color:var(--warn)">+1.2′</span></div>
+      <div class="field"><b>ALT ERROR</b><span style="color:var(--ok)">−0.3′</span></div>
+
+      <div class="row2" style="margin-top:12px">
+        <div class="btn">▶ CAPTURE &amp; SOLVE</div>
+        <div class="btn ghost">⌖ LOAD &amp; SLEW</div>
+      </div>
+    </div>
+  </div></div>
+  <div class="caption">⑧ Align (solver + polar align)</div>
+  </div>
+
+</div>
+
+<!-- ROW 3: GUIDING + AUTOMATION + INDI -->
+<h2 class="section">REAL-TIME · Guide, Scheduler, Observatory, INDI Panel</h2>
+<div class="row">
+
+  <!-- GUIDE -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:48</span><span class="right">📶 🔋 85%</span></div>
+    <div class="topbar">
+      <div class="title"><span class="live"></span> Guide · PHD2</div>
+      <div class="ic">⚙</div>
+    </div>
+    <div class="content">
+      <div class="grid2">
+        <div class="card"><div class="h">RMS Total</div><div class="v">0.62″</div><div class="s">target &lt; 1.0</div></div>
+        <div class="card"><div class="h">Peak</div><div class="v">1.4″</div><div class="s">last 60s</div></div>
+        <div class="card"><div class="h">RA RMS</div><div class="v" style="color:var(--accent)">0.41″</div><div class="s">drift +0.08</div></div>
+        <div class="card"><div class="h">DEC RMS</div><div class="v" style="color:var(--accent2)">0.46″</div><div class="s">drift −0.03</div></div>
+      </div>
+
+      <div class="label">Errore (60s)</div>
+      <div class="graph">
+        <svg viewBox="0 0 300 110" preserveAspectRatio="none">
+          <g class="gridlines">
+            <line x1="0" y1="55" x2="300" y2="55" stroke-dasharray="2 3"/>
+            <line x1="0" y1="20" x2="300" y2="20"/><line x1="0" y1="90" x2="300" y2="90"/>
+          </g>
+          <polyline class="ra" points="0,55 15,48 30,60 45,52 60,58 75,46 90,62 105,50 120,56 135,49 150,61 165,53 180,57 195,47 210,60 225,52 240,55 255,49 270,58 285,53 300,55"/>
+          <polyline class="dec" points="0,55 15,57 30,53 45,58 60,54 75,60 90,52 105,57 120,54 135,59 150,53 165,56 180,54 195,58 210,53 225,57 240,55 255,53 270,57 285,54 300,55"/>
+        </svg>
+      </div>
+      <div class="legend"><span><i></i>RA</span><span class="b"><i></i>DEC</span><span style="margin-left:auto">±2.0″</span></div>
+
+      <div class="label">Star · ★ SNR 38</div>
+      <div class="preview" style="aspect-ratio:3/1">
+        <div class="sky"></div>
+        <div style="position:absolute;left:50%;top:50%;width:30px;height:30px;border:1px solid var(--accent);transform:translate(-50%,-50%);box-shadow:0 0 0 3px rgba(245,166,35,.15)"></div>
+      </div>
+
+      <div class="label">Calibration · settings</div>
+      <div class="field"><b>STATUS</b><span style="color:var(--ok)">● OK · 21:14</span></div>
+      <div class="field"><b>RA AGGR</b><span>70%</span></div>
+      <div class="field"><b>DEC AGGR</b><span>60%</span></div>
+      <div class="field"><b>DITHER</b><span>3 px every 1 frame</span></div>
+
+      <div class="row2" style="margin-top:10px">
+        <div class="btn">▶ START</div>
+        <div class="btn ghost">■ STOP</div>
+      </div>
+      <div class="row2">
+        <div class="btn ghost">↯ DITHER</div>
+        <div class="btn ghost">⌖ RECAL</div>
+      </div>
+    </div>
+    <div class="nav">
+      <a><span class="ic">●</span><span>Dash</span></a>
+      <a><span class="ic">◎</span><span>Mount</span></a>
+      <a><span class="ic">▣</span><span>Capture</span></a>
+      <a class="active"><span class="ic">◈</span><span>Guide</span></a>
+      <a><span class="ic">≡</span><span>Menu</span></a>
+    </div>
+  </div></div>
+  <div class="caption">⑨ Guide (con preview stella)</div>
+  </div>
+
+  <!-- SCHEDULER -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:49</span><span class="right">📶 🔋 85%</span></div>
+    <div class="topbar">
+      <div class="title">⏱ Scheduler</div>
+      <div class="meta">2 jobs · running</div>
+    </div>
+    <div class="content">
+      <div class="label">Jobs notte 03/05</div>
+
+      <div class="jobrow run">
+        <div class="r1"><b>● M 31 — Andromeda</b><span class="when">21:30 → 02:42</span></div>
+        <div class="det">L20·R20·G20·B20 @ 180s · meridian flip @ 23:55</div>
+        <div class="bar" style="margin-top:6px"><i style="width:18%"></i></div>
+      </div>
+
+      <div class="jobrow">
+        <div class="r1"><b>○ NGC 7000</b><span class="when">02:45 → 04:50</span></div>
+        <div class="det">Hα 30 · OIII 15 · SII 15 @ 300s · alt &gt; 35°</div>
+      </div>
+
+      <div class="jobrow">
+        <div class="r1"><b>○ Flat panel · L,R,G,B</b><span class="when">04:55 → 05:10</span></div>
+        <div class="det">Auto · ADU 30000 · 10 frame</div>
+      </div>
+
+      <div class="label">Condizioni globali</div>
+      <div class="field"><b>TWILIGHT</b><span style="color:var(--ok)">astronomical</span></div>
+      <div class="field"><b>WEATHER</b><span style="color:var(--ok)">clear · safe</span></div>
+      <div class="field"><b>MIN ALTITUDE</b><span>30°</span></div>
+      <div class="field"><b>SHUTDOWN</b><span>park · warm cam · close roof</span></div>
+
+      <div class="label">Strategia</div>
+      <div class="chips">
+        <span class="chip on">Score &amp; Pick</span>
+        <span class="chip">List Order</span>
+        <span class="chip">Greedy</span>
+      </div>
+
+      <div class="row2" style="margin-top:12px">
+        <div class="btn">▶ START</div>
+        <div class="btn ghost">+ JOB</div>
+      </div>
+    </div>
+  </div></div>
+  <div class="caption">⑩ Scheduler (multi-target)</div>
+  </div>
+
+  <!-- OBSERVATORY -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:50</span><span class="right">📶 🔋 85%</span></div>
+    <div class="topbar">
+      <div class="title">◐ Observatory</div>
+      <div class="meta">ESP32-S3</div>
+    </div>
+    <div class="content">
+      <div class="domeillu"></div>
+
+      <div class="grid2" style="margin-top:10px">
+        <div class="card"><div class="h">Tetto</div><div class="v" style="font-size:14px;color:var(--ok)">Aperto</div><div class="s">apri · chiudi</div></div>
+        <div class="card"><div class="h">Dust cap</div><div class="v" style="font-size:14px">Open</div><div class="s">flat panel off</div></div>
+        <div class="card"><div class="h">Vento</div><div class="v" style="font-size:14px">4 km/h</div><div class="s">limit 30</div></div>
+        <div class="card"><div class="h">Pioggia</div><div class="v" style="font-size:14px;color:var(--ok)">No</div><div class="s">sensor OK</div></div>
+        <div class="card"><div class="h">Umidità</div><div class="v" style="font-size:14px">62%</div><div class="s">limit 90</div></div>
+        <div class="card"><div class="h">Cielo</div><div class="v" style="font-size:14px">SQM 21.3</div><div class="s">Bortle 4</div></div>
+      </div>
+
+      <div class="label">Safety automation</div>
+      <div class="field"><b>AUTO-CLOSE</b><span style="color:var(--ok)">● on rain/wind</span></div>
+      <div class="field"><b>SAFETY DELAY</b><span>5 s</span></div>
+
+      <div class="label">Manuale</div>
+      <div class="row2">
+        <div class="btn ok sm">⮝ OPEN ROOF</div>
+        <div class="btn danger sm">⮟ CLOSE</div>
+      </div>
+      <div class="row2" style="margin-top:6px">
+        <div class="btn ghost sm">FLAT ON</div>
+        <div class="btn ghost sm">FLAT OFF</div>
+      </div>
+
+      <div class="label">Flat panel · brightness</div>
+      <div style="background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px">
+        <div class="bar" style="height:8px"><i style="width:42%"></i></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px"><span>0</span><span>42 / 100</span><span>255</span></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="caption">⑪ Observatory (tetto + meteo)</div>
+  </div>
+
+  <!-- INDI PANEL -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:51</span><span class="right">📶 🔋 84%</span></div>
+    <div class="topbar">
+      <div class="title">⚙ INDI Panel</div>
+      <div class="meta">9 driver</div>
+    </div>
+    <div class="content">
+
+      <div class="label">Driver connessi</div>
+      <div class="indidev"><div class="l"><div class="ico">◎</div><div class="name"><b>EQMod Mount</b><small>connected · TCP 11880</small></div></div><span class="arrow">›</span></div>
+      <div class="indidev"><div class="l"><div class="ico">▣</div><div class="name"><b>ZWO ASI2600MC</b><small>cooling · −10.0°C</small></div></div><span class="arrow">›</span></div>
+      <div class="indidev"><div class="l"><div class="ico">⊙</div><div class="name"><b>ZWO EAF</b><small>position 24350</small></div></div><span class="arrow">›</span></div>
+      <div class="indidev"><div class="l"><div class="ico">◍</div><div class="name"><b>ZWO EFW (7×)</b><small>filter L · slot 1</small></div></div><span class="arrow">›</span></div>
+      <div class="indidev"><div class="l"><div class="ico">◈</div><div class="name"><b>ASI120MM Guide</b><small>streaming · 1s</small></div></div><span class="arrow">›</span></div>
+
+      <div class="label">→ ZWO ASI2600MC · proprietà live</div>
+      <div class="tabs">
+        <span class="tab on">Main</span>
+        <span class="tab">Image</span>
+        <span class="tab">Cooler</span>
+        <span class="tab">Options</span>
+        <span class="tab">Streaming</span>
+      </div>
+
+      <div class="prop">
+        <div class="ph"><span><span class="led"></span>CONNECTION</span><span>switch</span></div>
+        <div class="swrow"><span class="sw on">CONNECT</span><span class="sw">DISCONNECT</span><span class="sw">—</span></div>
+      </div>
+      <div class="prop">
+        <div class="ph"><span><span class="led"></span>CCD_EXPOSURE</span><span>number · ro</span></div>
+        <div class="pv"><span class="lbl">Value</span><b>118.4</b> <span style="color:var(--muted)">/ 180.0 s</span></div>
+      </div>
+      <div class="prop">
+        <div class="ph"><span><span class="led"></span>CCD_TEMPERATURE</span><span>number</span></div>
+        <div class="pv"><span class="lbl">target</span>−10.0 <span class="lbl" style="margin-left:14px">current</span><b style="color:var(--ok)">−10.0 °C</b></div>
+      </div>
+      <div class="prop">
+        <div class="ph"><span><span class="led"></span>CCD_GAIN</span><span>number</span></div>
+        <div class="pv"><span class="lbl">value</span><b>100</b> <span style="color:var(--muted)">[0–600]</span></div>
+      </div>
+      <div class="prop">
+        <div class="ph"><span><span class="led warn"></span>CCD_FRAME_TYPE</span><span>switch</span></div>
+        <div class="swrow"><span class="sw on">LIGHT</span><span class="sw">DARK</span><span class="sw">FLAT</span></div>
+        <div class="swrow"><span class="sw">BIAS</span><span class="sw">—</span><span class="sw">—</span></div>
+      </div>
+      <div class="prop">
+        <div class="ph"><span><span class="led idle"></span>CCD_BINNING</span><span>number</span></div>
+        <div class="pv"><span class="lbl">H</span><b>1</b><span class="lbl" style="margin-left:14px">V</span><b>1</b></div>
+      </div>
+
+      <div style="margin-top:14px;font-size:10.5px;color:var(--muted);text-align:center">↑ stesso layout della INDI Control Panel di Ekos · scroll per tutte le proprietà</div>
+    </div>
+  </div></div>
+  <div class="caption">⑫ INDI Panel (clone esatto Ekos)</div>
+  </div>
+
+</div>
+
+<!-- ROW 4: DATA -->
+<h2 class="section">DATA · Files, Analyze, Logs</h2>
+<div class="row">
+
+  <!-- FILES -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:52</span><span class="right">📶 🔋 84%</span></div>
+    <div class="topbar">
+      <div class="title">📁 Files · Ekos</div>
+      <div class="meta">~/Pictures/Ekos</div>
+    </div>
+    <div class="content">
+      <div class="search">🔍 cerca · M31 · Light · 2026-05</div>
+      <div class="chips" style="margin-top:8px"><span class="chip on">Tutti</span><span class="chip">Light</span><span class="chip">Dark</span><span class="chip">Flat</span><span class="chip">Bias</span></div>
+
+      <div class="label">M31 / Light / 2026-05-03</div>
+      <div class="filerow"><div class="thumb"></div><div><b>M31_L_180s_012.fits</b><small>L · 180s · g100 · 21:43:22</small></div><div class="meta">52.1 MB</div></div>
+      <div class="filerow"><div class="thumb"></div><div><b>M31_L_180s_011.fits</b><small>L · 180s · g100 · 21:40:18</small></div><div class="meta">52.0 MB</div></div>
+      <div class="filerow"><div class="thumb"></div><div><b>M31_L_180s_010.fits</b><small>L · 180s · g100 · 21:37:14</small></div><div class="meta">52.1 MB</div></div>
+      <div class="filerow"><div class="thumb"></div><div><b>M31_L_180s_009.fits</b><small>L · 180s · g100 · 21:34:10</small></div><div class="meta">52.1 MB</div></div>
+
+      <div class="label">Galleria thumbnail</div>
+      <div class="galgrid">
+        <div class="t"><span>L 012</span></div><div class="t"><span>L 011</span></div><div class="t"><span>L 010</span></div>
+        <div class="t"><span>L 009</span></div><div class="t"><span>L 008</span></div><div class="t"><span>L 007</span></div>
+        <div class="t"><span>L 006</span></div><div class="t"><span>L 005</span></div><div class="t"><span>L 004</span></div>
+      </div>
+
+      <div class="label">Spazio</div>
+      <div class="field"><b>USED</b><span>184 / 480 GB</span></div>
+      <div class="bar" style="margin-top:4px"><i style="width:38%"></i></div>
+    </div>
+  </div></div>
+  <div class="caption">⑬ Files (browser FITS con preview)</div>
+  </div>
+
+  <!-- ANALYZE -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:53</span><span class="right">📶 🔋 84%</span></div>
+    <div class="topbar">
+      <div class="title">📊 Analyze · sessione</div>
+      <div class="meta">21:30 → ora</div>
+    </div>
+    <div class="content">
+
+      <div class="label">HFR · 12 frame</div>
+      <div class="graph" style="height:90px">
+        <svg viewBox="0 0 300 70" preserveAspectRatio="none">
+          <polyline class="ra" points="0,40 25,38 50,42 75,36 100,32 125,30 150,34 175,28 200,30 225,32 250,30 275,34 300,32"/>
+        </svg>
+      </div>
+
+      <div class="label">RMS guide · sessione</div>
+      <div class="graph" style="height:90px">
+        <svg viewBox="0 0 300 70" preserveAspectRatio="none">
+          <polyline class="dec" points="0,30 30,38 60,28 90,32 120,40 150,30 180,28 210,34 240,30 270,28 300,32"/>
+        </svg>
+      </div>
+
+      <div class="label">Eventi</div>
+      <div class="filerow"><div style="width:38px;text-align:center;font-size:18px;color:var(--accent2)">↯</div><div><b>Dither</b><small>21:43:25 · settled in 4.2s</small></div><div></div></div>
+      <div class="filerow"><div style="width:38px;text-align:center;font-size:18px;color:var(--ok)">⊙</div><div><b>Autofocus</b><small>21:30:08 · HFR 2.10</small></div><div></div></div>
+      <div class="filerow"><div style="width:38px;text-align:center;font-size:18px;color:var(--accent)">✛</div><div><b>Plate solve</b><small>21:32:14 · 3.2s · sync</small></div><div></div></div>
+      <div class="filerow"><div style="width:38px;text-align:center;font-size:18px;color:var(--warn)">⚠</div><div><b>Star lost (1s)</b><small>21:38:50 · recovered</small></div><div></div></div>
+
+      <div class="grid3" style="margin-top:10px">
+        <div class="card"><div class="h">Frame ok</div><div class="v" style="color:var(--ok)">12</div></div>
+        <div class="card"><div class="h">Reject</div><div class="v">0</div></div>
+        <div class="card"><div class="h">HFR avg</div><div class="v">2.28</div></div>
+      </div>
+    </div>
+  </div></div>
+  <div class="caption">⑭ Analyze (timeline sessione)</div>
+  </div>
+
+  <!-- LOGS -->
+  <div>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>21:54</span><span class="right">📶 🔋 84%</span></div>
+    <div class="topbar">
+      <div class="title"><span class="live"></span> Logs</div>
+      <div class="meta">live</div>
+    </div>
+    <div class="content">
+      <div class="chips">
+        <span class="chip on">All</span>
+        <span class="chip">INDI</span>
+        <span class="chip">Ekos</span>
+        <span class="chip">PHD2</span>
+        <span class="chip">Mount</span>
+        <span class="chip">Camera</span>
+        <span class="chip">Focus</span>
+      </div>
+
+      <div class="label">Stream</div>
+      <div style="background:#05080e;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:ui-monospace,monospace;font-size:10.5px;line-height:1.65;color:#9aa3b6;height:480px;overflow:hidden">
+        <span style="color:var(--ok)">[21:30:02]</span> <span style="color:var(--accent)">EKOS</span> profilo "Osservatorio" avviato<br>
+        <span style="color:var(--ok)">[21:30:04]</span> <span style="color:var(--accent2)">INDI</span> EQMod connected · pier east<br>
+        <span style="color:var(--ok)">[21:30:05]</span> <span style="color:var(--accent2)">INDI</span> ASI2600MC connected · sensor OK<br>
+        <span style="color:var(--ok)">[21:30:06]</span> <span style="color:var(--accent2)">INDI</span> EAF connected · pos 24300<br>
+        <span style="color:var(--ok)">[21:30:07]</span> <span style="color:var(--accent2)">INDI</span> EFW connected · 7 slots<br>
+        <span style="color:var(--ok)">[21:30:09]</span> <span style="color:var(--accent)">EKOS</span> cooling target −10.0 °C<br>
+        <span style="color:var(--ok)">[21:32:14]</span> <span style="color:var(--accent)">ALIGN</span> solver OK · 3.2 s · Δ 0.6′<br>
+        <span style="color:var(--ok)">[21:32:15]</span> <span style="color:var(--accent)">MOUNT</span> sync · slew M31<br>
+        <span style="color:var(--ok)">[21:33:20]</span> <span style="color:var(--accent)">FOCUS</span> autofocus best 24350 · HFR 2.10<br>
+        <span style="color:var(--ok)">[21:33:22]</span> <span style="color:#ff8a8a">PHD2</span> calibration ok<br>
+        <span style="color:var(--ok)">[21:33:30]</span> <span style="color:#ff8a8a">PHD2</span> guide start · RMS 0.62″<br>
+        <span style="color:var(--ok)">[21:34:10]</span> <span style="color:var(--accent)">CAPT</span> L 001/20 · 180s start<br>
+        <span style="color:var(--ok)">[21:37:14]</span> <span style="color:var(--accent)">CAPT</span> L 001 saved · 52.1 MB<br>
+        <span style="color:var(--ok)">[21:37:16]</span> <span style="color:#ff8a8a">PHD2</span> dither 3px<br>
+        <span style="color:var(--warn)">[21:38:50]</span> <span style="color:#ff8a8a">PHD2</span> star lost · recovered 1.2s<br>
+        <span style="color:var(--ok)">[21:43:22]</span> <span style="color:var(--accent)">CAPT</span> L 012 saved · HFR 2.31<br>
+        <span style="color:var(--muted)">[21:43:25]</span> <span style="color:#ff8a8a">PHD2</span> dither settled 4.2s<br>
+        <span style="color:var(--ok)">[21:45:00]</span> <span style="color:var(--accent)">CAPT</span> L 013/20 · 180s start<br>
+      </div>
+
+      <div class="row2" style="margin-top:10px">
+        <div class="btn ghost sm">⤓ EXPORT</div>
+        <div class="btn ghost sm">🗑 CLEAR</div>
+      </div>
+    </div>
+  </div></div>
+  <div class="caption">⑮ Logs live (filtri per modulo)</div>
+  </div>
+
+</div>
+
+</div>
+</body>
+</html>

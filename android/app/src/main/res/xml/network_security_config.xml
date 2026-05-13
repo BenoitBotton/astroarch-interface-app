@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Permette HTTP/WS cleartext verso bridge AstroArch.
+         Tailscale fornisce già cifratura WireGuard end-to-end,
+         quindi non serve TLS sopra. -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

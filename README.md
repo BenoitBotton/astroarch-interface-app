@@ -1,0 +1,177 @@
+# Astroarch Interface — Android App
+
+> **Mobile-friendly clone of KStars/Ekos for your AstroArch observatory.**
+> Full remote control from your Android smartphone over Tailscale.
+
+[![Version](https://img.shields.io/badge/version-0.2.28-f5a623?style=flat-square)](https://github.com/Johannes1979I/astroarch-interface-app/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Android-8.0%2B-green?style=flat-square&logo=android)](#)
+[![Flutter](https://img.shields.io/badge/Flutter-3.32-02569B?style=flat-square&logo=flutter)](#)
+
+**Author**: Zarletti-Osservatorio Jupiter
+**Companion repo (bridge backend)**: [Johannes1979I/astroarch-bridge](https://github.com/Johannes1979I/astroarch-bridge)
+
+---
+
+## What this repo contains
+
+This is the **Android app** side of Astroarch Interface — a Flutter
+project that produces the APK installed on the phone. It talks over
+Tailscale to a Python **bridge** that runs on the Raspberry Pi 5
+inside the AstroArch installation. The bridge lives in a separate
+repository: **[astroarch-bridge](https://github.com/Johannes1979I/astroarch-bridge)**.
+
+You need **both** to use the system:
+
+| Repo | What it is | Where it runs |
+|---|---|---|
+| **astroarch-interface-app** *(this one)* | Flutter / Android app | the phone |
+| [**astroarch-bridge**](https://github.com/Johannes1979I/astroarch-bridge) | Python bridge — daemon | the Raspberry Pi 5 (AstroArch) |
+
+---
+
+## Features
+
+14 dedicated screens, one per Ekos module, mobile-tuned:
+
+- 📊 **Dashboard** with system master toggle (start/stop Ekos with one tap)
+- 🔭 **Mount** with SIMBAD search, GoTo / Sync / Track, joypad with rate selector, park / unpark
+- 🎯 **Align (Plate Solve)** — exact clone of Ekos Align: live FITS preview
+  auto-stretched (PixInsight-style adaptive STF), exposure/gain/binning,
+  Sync / Slew to target / Nothing chips, **app-owned active target**
+  (SIMBAD or mount position) pushed to Ekos before every solve
+- 📷 **Capture** — multi-job persistent sequencer (Ekos-style),
+  drag-and-drop reorder, save/load JSON presets, three exec modes
+  (Full Observation, Via Ekos, Direct INDI). **Stop button always
+  reachable** while a sequence is alive.
+- 🎯 **Guide (PHD2)** — live guide-star image with crosshair, RMS Total /
+  SNR / RA RMS / DEC RMS cards, real PHD2-style error chart (RA blue,
+  DEC red, signed Y axis), Find Star / Calibrate / Dither buttons
+- 🎛️ **Focus** — Ekos-native autofocus integration: live params,
+  live frame preview, real V-curve from `Ekos.Focus.newHFR` signal,
+  log tail
+- 🌡️ **Cooler** with stuck-driver detection and one-tap reconnect
+- 🌐 **Observatory** (dome, weather, dust cap, flat panel)
+- 📅 **Scheduler** with twilight / sun & moon altitude / weather safe
+- ⚙️ **Setup / Profiles** read from `~/.local/share/kstars/userdb.sqlite`
+- 🎛️ **INDI Panel** — exact clone of KStars's INDI Control Panel
+- 📁 **Files** browser (`~/Pictures/Ekos`) with thumbnails, batch delete,
+  RPi disk usage
+- 📈 **Analyze**, 🔬 **Activity Log** (every API call with timing)
+- 🌍 **IT / EN language selector** in Settings, persistent
+- 📱 **Pairing QR** in Settings (auto-generates with Tailscale IP)
+
+---
+
+## Quick start (AstroArch users)
+
+> Tested on AstroArch (ArchLinux ARM) + Raspberry Pi 5. Setup time: **~10 minutes**.
+
+### 1) Install the bridge on the Pi (separate repo)
+
+```bash
+ssh astronaut@RPI_IP
+git clone https://github.com/Johannes1979I/astroarch-bridge
+cd astroarch-bridge
+sudo bash deploy/install.sh --user astronaut
+```
+
+The script generates a token, creates the systemd service, and prints
+the Tailscale URL + LAN URL + token. See the
+[**astroarch-bridge README**](https://github.com/Johannes1979I/astroarch-bridge#readme)
+for full backend instructions.
+
+### 2) Tailscale on Pi and phone
+
+```bash
+# On the Pi (if not already)
+sudo pacman -S tailscale
+sudo systemctl enable --now tailscaled
+sudo tailscale up
+```
+
+Then install **Tailscale** on the phone from the Play Store and sign in
+with the same account.
+
+### 3) Install this APK
+
+Download the latest APK from
+[**Releases**](https://github.com/Johannes1979I/astroarch-interface-app/releases/latest)
+and install it on the phone (Android 8.0+).
+
+### 4) Pair the app
+
+Open the app → **SCAN QR FROM DASHBOARD** and frame the QR shown by
+the desktop dashboard widget on the Pi. Alternatively, **Enter
+manually**:
+
+- **Host**: Pi's Tailscale IP (e.g. `100.x.y.z`, from `tailscale ip -4`)
+- **Port**: `8765`
+- **Token**: printed by the bridge install script
+
+---
+
+## Building from source
+
+```bash
+flutter pub get
+flutter build apk --release
+```
+
+The APK is produced in `build/app/outputs/flutter-apk/app-release.apk`.
+
+Version bumping: edit **both** `lib/app_version.dart` (`kAppVersion`)
+**and** `pubspec.yaml` (`version:`) so the Dashboard badge stays
+aligned with the installed APK.
+
+### Tech stack
+
+| | |
+|---|---|
+| Framework | Flutter 3.32 / Dart 3.5 |
+| State management | Provider |
+| HTTP | http / web_socket_channel |
+| Charts | fl_chart |
+| QR scanner | mobile_scanner |
+| i18n | local table + StringTr extension (`lib/i18n/strings.dart`) |
+| Theme | custom dark astro theme + Night Mode |
+
+### Project structure
+
+```
+lib/
+├── api/             — REST / WebSocket clients
+├── i18n/strings.dart — IT/EN translation table
+├── screens/         — 14 module screens
+│   ├── align/         (plate_solve_tab, polar_align_tab)
+│   ├── capture/       (job_form, sequence_runner, cooler_panel)
+│   └── ...
+├── state/           — AppState (Provider), capture jobs persistence
+├── theme/           — colour tokens
+└── widgets/         — reusable widgets (ekos_master_toggle, common, …)
+```
+
+---
+
+## Documentation
+
+- 📄 [**User Manual PDF**](AstroarchInterface_Manual.pdf) — full printable guide
+- 🎨 [mockups.html](mockups.html) — UI preview (open in a browser)
+
+---
+
+## License
+
+[MIT](LICENSE) — feel free to use, modify, distribute. Please keep
+attribution to Zarletti-Osservatorio Jupiter.
+
+---
+
+## Credits
+
+- **AstroArch** — [github.com/devDucks/astroarch](https://github.com/devDucks/astroarch)
+- **KStars / Ekos** — [edu.kde.org/kstars](https://edu.kde.org/kstars/)
+- **PHD2** — [openphdguiding.org](https://openphdguiding.org/)
+- **astrometry.net** — [astrometry.net](https://astrometry.net/)
+
+🌙 **Clear skies!** — Zarletti-Osservatorio Jupiter
