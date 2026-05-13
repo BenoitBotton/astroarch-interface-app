@@ -3,7 +3,7 @@
 > **Mobile-friendly clone of KStars/Ekos for your AstroArch observatory.**
 > Full remote control from your Android smartphone over Tailscale.
 
-[![Version](https://img.shields.io/badge/version-0.2.28-f5a623?style=flat-square)](https://github.com/Johannes1979I/astroarch-interface-app/releases)
+[![Version](https://img.shields.io/badge/version-0.2.29-f5a623?style=flat-square)](https://github.com/Johannes1979I/astroarch-interface-app/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Android-8.0%2B-green?style=flat-square&logo=android)](#)
 [![Flutter](https://img.shields.io/badge/Flutter-3.32-02569B?style=flat-square&logo=flutter)](#)
@@ -32,34 +32,51 @@ You need **both** to use the system:
 
 ## Features
 
-14 dedicated screens, one per Ekos module, mobile-tuned:
+14 dedicated screens + cross-cutting features. Everything mobile-tuned.
 
-- 📊 **Dashboard** with system master toggle (start/stop Ekos with one tap)
-- 🔭 **Mount** with SIMBAD search, GoTo / Sync / Track, joypad with rate selector, park / unpark
-- 🎯 **Align (Plate Solve)** — exact clone of Ekos Align: live FITS preview
-  auto-stretched (PixInsight-style adaptive STF), exposure/gain/binning,
-  Sync / Slew to target / Nothing chips, **app-owned active target**
-  (SIMBAD or mount position) pushed to Ekos before every solve
+### 🆕 In the latest releases
+
+- **Multi-bridge (v0.2.29)** — save more than one Pi (e.g. two
+  different telescopes) and switch with one tap on the Dashboard
+- **Ekos-native autofocus (v0.2.26)** — live params, frame preview,
+  real V-curve from `Ekos.Focus.newHFR`, log tail
+- **PHD2-style guide chart (v0.2.25)** — RA/DEC signed arcsec, per-
+  frame `RADistanceRaw`/`DECDistanceRaw` like the desktop chart
+- **App-owned active target (v0.2.24)** — pushed to Ekos before every
+  solve; KStars "Center & Slew" no longer leaves Ekos with stale targets
+- **Pairing QR auto-generated with Tailscale IP (v0.2.18)** — works
+  from any network with Tailscale on
+- **IT / EN language selector (v0.2.16)** in Settings, persistent
+- **Master Start/Stop Ekos (v0.2.17)** big toggle on the Dashboard
+
+### All modules
+
+- 📊 **Dashboard** with system master toggle + multi-bridge name selector
+- 🔭 **Mount** — SIMBAD search, GoTo/Sync/Track, joypad with rate
+  selector, park/unpark, emergency stop
+- 🎯 **Align (Plate Solve)** — exact clone of Ekos Align: live FITS
+  preview auto-stretched (PixInsight-style adaptive STF), exposure/
+  gain/binning, Sync / Slew to target / Nothing chips, app-owned
+  active target (SIMBAD / mount position / manual) pushed to Ekos
+  before every solve
 - 📷 **Capture** — multi-job persistent sequencer (Ekos-style),
   drag-and-drop reorder, save/load JSON presets, three exec modes
-  (Full Observation, Via Ekos, Direct INDI). **Stop button always
-  reachable** while a sequence is alive.
-- 🎯 **Guide (PHD2)** — live guide-star image with crosshair, RMS Total /
-  SNR / RA RMS / DEC RMS cards, real PHD2-style error chart (RA blue,
-  DEC red, signed Y axis), Find Star / Calibrate / Dither buttons
-- 🎛️ **Focus** — Ekos-native autofocus integration: live params,
-  live frame preview, real V-curve from `Ekos.Focus.newHFR` signal,
-  log tail
+  (Full Observation, Via Ekos, Direct INDI). Stop button always
+  reachable; **reads your Ekos save folder + placeholder format** from
+  KStars userdb so jobs save where you configured in Ekos
+- 🎯 **Guide (PHD2)** — live guide-star image with crosshair, RMS
+  cards, real PHD2-style error chart, Find Star / Calibrate / Dither
+- 🎛️ **Focus** — Ekos-native autofocus + bridge iterative fallback
 - 🌡️ **Cooler** with stuck-driver detection and one-tap reconnect
 - 🌐 **Observatory** (dome, weather, dust cap, flat panel)
 - 📅 **Scheduler** with twilight / sun & moon altitude / weather safe
 - ⚙️ **Setup / Profiles** read from `~/.local/share/kstars/userdb.sqlite`
 - 🎛️ **INDI Panel** — exact clone of KStars's INDI Control Panel
-- 📁 **Files** browser (`~/Pictures/Ekos`) with thumbnails, batch delete,
-  RPi disk usage
+- 📁 **Files** browser (`~/Pictures/Ekos`) with thumbnails, batch
+  delete, RPi disk usage
 - 📈 **Analyze**, 🔬 **Activity Log** (every API call with timing)
-- 🌍 **IT / EN language selector** in Settings, persistent
-- 📱 **Pairing QR** in Settings (auto-generates with Tailscale IP)
+- 🌐 **Connessioni** — manage all your saved bridges in one place
+- ⚙️ **Settings** — language, theme, pairing QR, app info
 
 ---
 
