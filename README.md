@@ -3,7 +3,7 @@
 > **Mobile-friendly clone of KStars/Ekos for your AstroArch observatory.**
 > Full remote control from your Android smartphone over Tailscale.
 
-[![Version](https://img.shields.io/badge/version-0.2.29-f5a623?style=flat-square)](https://github.com/Johannes1979I/astroarch-interface-app/releases)
+[![Version](https://img.shields.io/badge/version-0.2.30-f5a623?style=flat-square)](https://github.com/Johannes1979I/astroarch-interface-app/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Android-8.0%2B-green?style=flat-square&logo=android)](#)
 [![Flutter](https://img.shields.io/badge/Flutter-3.32-02569B?style=flat-square&logo=flutter)](#)
@@ -36,6 +36,9 @@ You need **both** to use the system:
 
 ### 🆕 In the latest releases
 
+- **Launch KStars/Ekos & PHD2 (v0.2.30)** — two buttons on the
+  Dashboard that spawn the GUI apps on the RPi's monitor, with live
+  "running" indicators (polled every 3 s)
 - **Multi-bridge (v0.2.29)** — save more than one Pi (e.g. two
   different telescopes) and switch with one tap on the Dashboard
 - **Ekos-native autofocus (v0.2.26)** — live params, frame preview,
