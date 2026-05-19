@@ -45,7 +45,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
   String get _baseUrl => 'http://${widget.host}:${widget.port}';
   String get _wsUrl =>
-  'ws://${widget.host}:${widget.port}/ws/state?token=${Uri.encodeQueryComponent(widget.token)}';
+    'ws://${widget.host}:${widget.port}/ws/state?token=${Uri.encodeQueryComponent(widget.token)}';
 
   Future<void> _run() async {
     setState(() {
@@ -53,7 +53,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       for (final s in steps) {
         s.status = _Status.pending;
         s.detail = '';
-    s.duration = null;
+        s.duration = null;
       }
     });
 
@@ -64,14 +64,14 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         final sw = Stopwatch()..start();
         try {
           final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-          .timeout(const Duration(seconds: 4));
+          . timeout(const Duration(seconds: 4));
           sw.stop();
           steps[0].duration = sw.elapsed;
           steps[0].detail = 'host reached in ${sw.elapsedMilliseconds} ms';
-      return r.statusCode > 0;
+          return r.statusCode > 0;
         } catch (e) {
           steps[0].detail = 'host unreachable: ${_short(e)}';
-      return false;
+          return false;
         }
       });
       if (steps[0].status == _Status.fail) return;
@@ -80,11 +80,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       await _runStep(1, () async {
         final sw = Stopwatch()..start();
         final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-        .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 5));
         sw.stop();
         steps[1].duration = sw.elapsed;
         steps[1].detail = 'HTTP ${r.statusCode} · ${_short(r.body)}';
-      return r.statusCode == 200;
+        return r.statusCode == 200;
       });
       if (steps[1].status == _Status.fail) return;
 
@@ -99,10 +99,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         steps[2].duration = sw.elapsed;
         if (r.statusCode == 401) {
           steps[2].detail = '401 — Token rejected (verify it is correct)';
-      return false;
+          return false;
         }
         steps[2].detail = 'HTTP ${r.statusCode} · ${_short(r.body)}';
-      return r.statusCode == 200;
+        return r.statusCode == 200;
       });
       if (steps[2].status == _Status.fail) return;
 
@@ -119,7 +119,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         steps[3].duration = sw.elapsed;
         if (r.statusCode != 200) {
           steps[3].detail = 'HTTP ${r.statusCode}';
-      return false;
+        return false;
         }
         try {
           final j = jsonDecode(r.body);
@@ -128,11 +128,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           devCount = devs.length;
           propCount = props.length;
           final indi = j['connections']?['indi'];
-          steps[3].detail = 'devices=$devCount · properties=$propCount · INDI=$indi · payload=${(r.contentLength ?? r.bodyBytes.length)} bytes';
-      return true;
+          steps[3].detail = 'devices=$devCount · properties=$propCount · INDI=$indi · payload=${(r.contentLength ?? r.bodyBytes.length)} byte';
+          return true;
         } catch (e) {
           steps[3].detail = 'JSON parse failed: $e';
-      return false;
+          return false;
         }
       });
       if (steps[3].status == _Status.fail) return;
@@ -148,10 +148,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             sw.stop();
             steps[4].duration = sw.elapsed;
             steps[4].detail = 'opened in ${sw.elapsedMilliseconds} ms';
-        return true;
+            return true;
           } catch (e) {
             steps[4].detail = 'WS connect failed: ${_short(e)}';
-        return false;
+            return false;
           }
         });
         if (steps[4].status == _Status.fail) return;
@@ -171,17 +171,17 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               try {
                 firstMsg = (jsonDecode(raw) as Map).cast<String, dynamic>();
                 steps[5].detail = 'type=${firstMsg!['type']} · in ${sw.elapsedMilliseconds} ms';
-        return firstMsg!['type'] == 'snapshot_begin' || firstMsg!['type'] == 'snapshot';
+                return firstMsg!['type'] == 'snapshot_begin' || firstMsg!['type'] == 'snapshot';
               } catch (e) {
                 steps[5].detail = 'Malformed JSON: ${_short(raw)}';
-        return false;
+                return false;
               }
             }
             steps[5].detail = 'unknown data type: ${raw.runtimeType}';
-        return false;
+            return false;
           } catch (e) {
             steps[5].detail = '5s timeout or error: ${_short(e)}';
-        return false;
+            return false;
           }
         });
         if (steps[5].status == _Status.fail) return;
@@ -212,7 +212,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           sw.stop();
           steps[6].duration = sw.elapsed;
           steps[6].detail = 'property_def received: $gotProps / $propCount · snapshot_end: ${endSeen ? "✓" : "✗"}';
-        return gotProps > 0;
+          return gotProps > 0;
         });
       } finally {
         try { await ch?.sink.close(); } catch (_) {}
@@ -268,10 +268,10 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           TextButton.icon(
             onPressed: running ? null : _run,
             icon: Icon(running ? Icons.sync : Icons.play_arrow,
-                       color: running ? T.muted(context) : T.accent(context)),
-                       label: Text(running ? 'RUNNING'.tr(context) : 'START'.tr(context),
-                       style: TextStyle(color: running ? T.muted(context) : T.accent(context),
-                       fontWeight: FontWeight.w700)),
+                color: running ? T.muted(context) : T.accent(context)),
+            label: Text(running ? 'RUNNING'.tr(context) : 'START'.tr(context),
+                style: TextStyle(color: running ? T.muted(context) : T.accent(context),
+                    fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -285,20 +285,20 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${'Target: '.tr(context)}${widget.host}:${widget.port}',
-                style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600)),
+                    style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600)),
                 Text('${'Token: '.tr(context)}${widget.token.substring(0, widget.token.length.clamp(0, 8))}…',
-                style: TextStyle(fontFamily: 'monospace', color: T.muted(context), fontSize: 11)),
+                    style: TextStyle(fontFamily: 'monospace', color: T.muted(context), fontSize: 11)),
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity, height: 46,
                   child: ElevatedButton.icon(
                     onPressed: running ? null : _run,
                     icon: running
-                    ? const SizedBox(width: 16, height: 16,
-                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                    : const Icon(Icons.play_arrow, color: Colors.black),
+                        ? const SizedBox(width: 16, height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                        : const Icon(Icons.play_arrow, color: Colors.black),
                     label: Text(running ? 'TEST IN PROGRESS…'.tr(context) : 'START TEST'.tr(context),
-                    style: const TextStyle(fontWeight: FontWeight.w700)),
+                        style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -329,14 +329,14 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(s.label.tr(context),
-                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             if (s.detail.isNotEmpty) Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(s.detail,
-                                          style: TextStyle(color: T.muted(context), fontSize: 11, fontFamily: 'monospace')),
+                                  style: TextStyle(color: T.muted(context), fontSize: 11, fontFamily: 'monospace')),
                             ),
                             if (s.duration != null) Text('${s.duration!.inMilliseconds} ms',
-                              style: TextStyle(color: T.muted(context), fontSize: 10)),
+                                style: TextStyle(color: T.muted(context), fontSize: 10)),
                           ],
                         ),
                       ),
