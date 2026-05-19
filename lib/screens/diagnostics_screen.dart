@@ -45,7 +45,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
 
   String get _baseUrl => 'http://${widget.host}:${widget.port}';
   String get _wsUrl =>
-    'ws://${widget.host}:${widget.port}/ws/state?token=${Uri.encodeQueryComponent(widget.token)}';
+      'ws://${widget.host}:${widget.port}/ws/state?token=${Uri.encodeQueryComponent(widget.token)}';
 
   Future<void> _run() async {
     setState(() {
@@ -64,7 +64,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         final sw = Stopwatch()..start();
         try {
           final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-          . timeout(const Duration(seconds: 4));
+              . timeout(const Duration(seconds: 4));
           sw.stop();
           steps[0].duration = sw.elapsed;
           steps[0].detail = 'host reached in ${sw.elapsedMilliseconds} ms';
@@ -80,7 +80,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       await _runStep(1, () async {
         final sw = Stopwatch()..start();
         final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-          .timeout(const Duration(seconds: 5));
+            .timeout(const Duration(seconds: 5));
         sw.stop();
         steps[1].duration = sw.elapsed;
         steps[1].detail = 'HTTP ${r.statusCode} · ${_short(r.body)}';
@@ -119,7 +119,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         steps[3].duration = sw.elapsed;
         if (r.statusCode != 200) {
           steps[3].detail = 'HTTP ${r.statusCode}';
-        return false;
+          return false;
         }
         try {
           final j = jsonDecode(r.body);
