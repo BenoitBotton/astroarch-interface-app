@@ -6,9 +6,9 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../i18n/strings.dart';
 import '../theme/app_theme.dart';
 
-/// Schermata diagnostica step-by-step per capire dove si rompe la catena
-/// di connessione bridge -> app. Eseguita SENZA dover usare il flusso
-/// Provider/AppState completo.
+/// Step-by-step diagnostics screen to identify where the bridge -> app
+/// connection chain breaks. Executed WITHOUT relying on the full
+/// Provider/AppState flow.
 class DiagnosticsScreen extends StatefulWidget {
   final String host;
   final int port;
@@ -33,19 +33,19 @@ class _Step {
 
 class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   final List<_Step> steps = [
-    _Step('1. Risoluzione host (DNS / Tailscale)'),
+    _Step('1. Host resolution (DNS / Tailscale)'),
     _Step('2. HTTP GET /healthz'),
-    _Step('3. HTTP GET /api/system/info (auth Bearer)'),
-    _Step('4. HTTP GET /api/system/snapshot (verifica payload)'),
-    _Step('5. WebSocket /ws/state (apertura)'),
-    _Step('6. WebSocket — primo messaggio entro 5s'),
-    _Step('7. WebSocket — ricezione property_def chunked'),
+    _Step('3. HTTP GET /api/system/info (Bearer auth)'),
+    _Step('4. HTTP GET /api/system/snapshot (verify payload)'),
+    _Step('5. WebSocket /ws/state (open)'),
+    _Step('6. WebSocket — first message within 5s'),
+    _Step('7. WebSocket — receive chunked property_def'),
   ];
   bool running = false;
 
   String get _baseUrl => 'http://${widget.host}:${widget.port}';
   String get _wsUrl =>
-      'ws://${widget.host}:${widget.port}/ws/state?token=${Uri.encodeQueryComponent(widget.token)}';
+  'ws://${widget.host}:${widget.port}/ws/state?token=${Uri.encodeQueryComponent(widget.token)}';
 
   Future<void> _run() async {
     setState(() {
@@ -53,25 +53,25 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       for (final s in steps) {
         s.status = _Status.pending;
         s.detail = '';
-        s.duration = null;
+    s.duration = null;
       }
     });
 
     final http.Client client = http.Client();
     try {
-      // Step 1: resolution (proxy: tentiamo connessione TCP via http GET)
+      // Step 1: resolution (proxy: attempt TCP connection via HTTP GET)
       await _runStep(0, () async {
         final sw = Stopwatch()..start();
         try {
           final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-              .timeout(const Duration(seconds: 4));
+          .timeout(const Duration(seconds: 4));
           sw.stop();
           steps[0].duration = sw.elapsed;
-          steps[0].detail = 'host raggiunto in ${sw.elapsedMilliseconds} ms';
-          return r.statusCode > 0;
+          steps[0].detail = 'host reached in ${sw.elapsedMilliseconds} ms';
+      return r.statusCode > 0;
         } catch (e) {
-          steps[0].detail = 'host irraggiungibile: ${_short(e)}';
-          return false;
+          steps[0].detail = 'host unreachable: ${_short(e)}';
+      return false;
         }
       });
       if (steps[0].status == _Status.fail) return;
@@ -80,11 +80,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
       await _runStep(1, () async {
         final sw = Stopwatch()..start();
         final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-            .timeout(const Duration(seconds: 5));
+        .timeout(const Duration(seconds: 5));
         sw.stop();
         steps[1].duration = sw.elapsed;
         steps[1].detail = 'HTTP ${r.statusCode} · ${_short(r.body)}';
-        return r.statusCode == 200;
+      return r.statusCode == 200;
       });
       if (steps[1].status == _Status.fail) return;
 
@@ -98,15 +98,15 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         sw.stop();
         steps[2].duration = sw.elapsed;
         if (r.statusCode == 401) {
-          steps[2].detail = '401 — Token rifiutato (controlla che sia corretto)';
-          return false;
+          steps[2].detail = '401 — Token rejected (verify it is correct)';
+      return false;
         }
         steps[2].detail = 'HTTP ${r.statusCode} · ${_short(r.body)}';
-        return r.statusCode == 200;
+      return r.statusCode == 200;
       });
       if (steps[2].status == _Status.fail) return;
 
-      // Step 4: snapshot REST
+      // Step 4: REST snapshot
       int devCount = 0;
       int propCount = 0;
       await _runStep(3, () async {
@@ -119,7 +119,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         steps[3].duration = sw.elapsed;
         if (r.statusCode != 200) {
           steps[3].detail = 'HTTP ${r.statusCode}';
-          return false;
+      return false;
         }
         try {
           final j = jsonDecode(r.body);
@@ -128,11 +128,11 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
           devCount = devs.length;
           propCount = props.length;
           final indi = j['connections']?['indi'];
-          steps[3].detail = 'devices=$devCount · properties=$propCount · INDI=$indi · payload=${(r.contentLength ?? r.bodyBytes.length)} byte';
-          return true;
+          steps[3].detail = 'devices=$devCount · properties=$propCount · INDI=$indi · payload=${(r.contentLength ?? r.bodyBytes.length)} bytes';
+      return true;
         } catch (e) {
           steps[3].detail = 'JSON parse failed: $e';
-          return false;
+      return false;
         }
       });
       if (steps[3].status == _Status.fail) return;
@@ -147,50 +147,53 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             await ch!.ready.timeout(const Duration(seconds: 5));
             sw.stop();
             steps[4].duration = sw.elapsed;
-            steps[4].detail = 'aperto in ${sw.elapsedMilliseconds} ms';
-            return true;
+            steps[4].detail = 'opened in ${sw.elapsedMilliseconds} ms';
+        return true;
           } catch (e) {
-            steps[4].detail = 'WS connect fallito: ${_short(e)}';
-            return false;
+            steps[4].detail = 'WS connect failed: ${_short(e)}';
+        return false;
           }
         });
         if (steps[4].status == _Status.fail) return;
 
-        // Step 6: primo messaggio
+        // Fix: Convert the stream into a broadcast stream to allow multiple listeners
+        final Stream<dynamic> broadcastStream = ch!.stream.asBroadcastStream();
+
+        // Step 6: first message
         Map<String, dynamic>? firstMsg;
         await _runStep(5, () async {
           final sw = Stopwatch()..start();
           try {
-            final raw = await ch!.stream.first.timeout(const Duration(seconds: 5));
+            final raw = await broadcastStream.first.timeout(const Duration(seconds: 5));
             sw.stop();
             steps[5].duration = sw.elapsed;
             if (raw is String) {
               try {
                 firstMsg = (jsonDecode(raw) as Map).cast<String, dynamic>();
-                steps[5].detail = 'tipo=${firstMsg!['type']} · in ${sw.elapsedMilliseconds} ms';
-                return firstMsg!['type'] == 'snapshot_begin' || firstMsg!['type'] == 'snapshot';
+                steps[5].detail = 'type=${firstMsg!['type']} · in ${sw.elapsedMilliseconds} ms';
+        return firstMsg!['type'] == 'snapshot_begin' || firstMsg!['type'] == 'snapshot';
               } catch (e) {
-                steps[5].detail = 'JSON malformato: ${_short(raw)}';
-                return false;
+                steps[5].detail = 'Malformed JSON: ${_short(raw)}';
+        return false;
               }
             }
-            steps[5].detail = 'tipo dato sconosciuto: ${raw.runtimeType}';
-            return false;
+            steps[5].detail = 'unknown data type: ${raw.runtimeType}';
+        return false;
           } catch (e) {
-            steps[5].detail = 'timeout 5s o errore: ${_short(e)}';
-            return false;
+            steps[5].detail = '5s timeout or error: ${_short(e)}';
+        return false;
           }
         });
         if (steps[5].status == _Status.fail) return;
 
-        // Step 7: aspetta property_def fino a snapshot_end o N elementi
+        // Step 7: wait for property_def until snapshot_end or N elements
         await _runStep(6, () async {
           final sw = Stopwatch()..start();
           int gotProps = 0;
           bool endSeen = false;
           try {
             final completer = Completer<void>();
-            final sub = ch!.stream.listen((data) {
+            final sub = broadcastStream.listen((data) {
               if (data is! String) return;
               try {
                 final j = jsonDecode(data);
@@ -204,12 +207,12 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
             await completer.future.timeout(const Duration(seconds: 12));
             await sub.cancel();
           } on TimeoutException {
-            // ok parziale: vediamo quante ne abbiamo ricevute
+            // partial ok: let's see how many we received
           }
           sw.stop();
           steps[6].duration = sw.elapsed;
-          steps[6].detail = 'property_def ricevute: $gotProps / $propCount · snapshot_end: ${endSeen ? "✓" : "✗"}';
-          return gotProps > 0;
+          steps[6].detail = 'property_def received: $gotProps / $propCount · snapshot_end: ${endSeen ? "✓" : "✗"}';
+        return gotProps > 0;
         });
       } finally {
         try { await ch?.sink.close(); } catch (_) {}
@@ -260,21 +263,21 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Diagnostica connessione'.tr(context)),
+        title: Text('Connection Diagnostics'.tr(context)),
         actions: [
           TextButton.icon(
             onPressed: running ? null : _run,
             icon: Icon(running ? Icons.sync : Icons.play_arrow,
-                color: running ? T.muted(context) : T.accent(context)),
-            label: Text(running ? 'IN CORSO'.tr(context) : 'AVVIA'.tr(context),
-                style: TextStyle(color: running ? T.muted(context) : T.accent(context),
-                    fontWeight: FontWeight.w700)),
+                       color: running ? T.muted(context) : T.accent(context)),
+                       label: Text(running ? 'RUNNING'.tr(context) : 'START'.tr(context),
+                       style: TextStyle(color: running ? T.muted(context) : T.accent(context),
+                       fontWeight: FontWeight.w700)),
           ),
         ],
       ),
       body: Column(
         children: [
-          // Target + bottone AVVIA TEST sempre visibile in cima
+          // Target + START TEST button always visible at the top
           Container(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             color: T.panel(context),
@@ -282,20 +285,20 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('${'Target: '.tr(context)}${widget.host}:${widget.port}',
-                    style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600)),
+                style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600)),
                 Text('${'Token: '.tr(context)}${widget.token.substring(0, widget.token.length.clamp(0, 8))}…',
-                    style: TextStyle(fontFamily: 'monospace', color: T.muted(context), fontSize: 11)),
+                style: TextStyle(fontFamily: 'monospace', color: T.muted(context), fontSize: 11)),
                 const SizedBox(height: 10),
                 SizedBox(
                   width: double.infinity, height: 46,
                   child: ElevatedButton.icon(
                     onPressed: running ? null : _run,
                     icon: running
-                        ? const SizedBox(width: 16, height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
-                        : const Icon(Icons.play_arrow, color: Colors.black),
-                    label: Text(running ? 'TEST IN CORSO…'.tr(context) : 'AVVIA TEST'.tr(context),
-                        style: const TextStyle(fontWeight: FontWeight.w700)),
+                    ? const SizedBox(width: 16, height: 16,
+                                     child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black))
+                    : const Icon(Icons.play_arrow, color: Colors.black),
+                    label: Text(running ? 'TEST IN PROGRESS…'.tr(context) : 'START TEST'.tr(context),
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
                   ),
                 ),
               ],
@@ -326,14 +329,14 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(s.label.tr(context),
-                                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
                             if (s.detail.isNotEmpty) Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(s.detail,
-                                  style: TextStyle(color: T.muted(context), fontSize: 11, fontFamily: 'monospace')),
+                                          style: TextStyle(color: T.muted(context), fontSize: 11, fontFamily: 'monospace')),
                             ),
                             if (s.duration != null) Text('${s.duration!.inMilliseconds} ms',
-                                style: TextStyle(color: T.muted(context), fontSize: 10)),
+                              style: TextStyle(color: T.muted(context), fontSize: 10)),
                           ],
                         ),
                       ),
