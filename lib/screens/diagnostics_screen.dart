@@ -64,7 +64,7 @@ class _DiagnosticsScreenState extends State<DiagnosticsScreen> {
         final sw = Stopwatch()..start();
         try {
           final r = await client.get(Uri.parse('$_baseUrl/healthz'))
-              . timeout(const Duration(seconds: 4));
+              .timeout(const Duration(seconds: 4));
           sw.stop();
           steps[0].duration = sw.elapsed;
           steps[0].detail = 'host reached in ${sw.elapsedMilliseconds} ms';
