@@ -83,12 +83,12 @@ class ApiClient {
     }
   }
 
-  Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body]) async {
+  Future<Map<String, dynamic>> post(String path, [Map<String, dynamic>? body, Duration? timeout]) async {
     final sw = Stopwatch()..start();
     try {
       final r = await _http
           .post(_u(path), headers: _authHeaders, body: jsonEncode(body ?? {}))
-          .timeout(const Duration(seconds: 15));
+          .timeout(timeout ?? const Duration(seconds: 15));
       sw.stop();
       ApiLog.add(ApiLogEntry(
         ts: DateTime.now(), method: 'POST', path: _logPath(path, null),
@@ -429,8 +429,40 @@ class ApiClient {
   Future<Map<String, dynamic>> guideStatus() => get('/api/guide/status');
   Future<void> guideStart({Map<String, dynamic>? p}) => post('/api/guide/start', p);
   Future<void> guideStop() => post('/api/guide/stop');
-  Future<void> guideDither({double amount = 3.0, bool raOnly = false}) =>
-      post('/api/guide/dither', {'amount': amount, 'ra_only': raOnly});
+  Future<Map<String, dynamic>> guideDither({
+    double amount = 3.0,
+    bool raOnly = false,
+    double? settleTime,
+    double? settlePixels,
+    double? settleTimeout,
+    bool wait = true,
+  }) {
+    final body = <String, dynamic>{
+      'amount': amount,
+      'ra_only': raOnly,
+      'wait': wait,
+    };
+    if (settleTime != null) body['settle_time'] = settleTime;
+    if (settlePixels != null) body['settle_pixels'] = settlePixels;
+    if (settleTimeout != null) body['settle_timeout'] = settleTimeout;
+    // Con wait=true il bridge blocca fino al SettleDone (puo' durare quanto
+    // settle_timeout): allunghiamo il timeout HTTP di conseguenza.
+    final to = wait
+        ? Duration(seconds: ((settleTimeout ?? 60.0) + 25).toInt())
+        : const Duration(seconds: 15);
+    return post('/api/guide/dither', body, to);
+  }
+
+  /// Connette TUTTE le periferiche del profilo PHD2 attivo (RPC set_connected).
+  Future<Map<String, dynamic>> guideConnectEquipment({
+    bool connected = true,
+    int? profileId,
+  }) {
+    final body = <String, dynamic>{'connected': connected};
+    if (profileId != null) body['profile_id'] = profileId;
+    return post('/api/guide/connect_equipment', body);
+  }
+
   Future<void> guideLoop() => post('/api/guide/loop');
   Future<void> guideClearCalibration() => post('/api/guide/clear_calibration');
   Future<void> guidePause(bool paused) => post('/api/guide/pause', {'paused': paused});

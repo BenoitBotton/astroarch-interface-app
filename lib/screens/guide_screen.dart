@@ -130,6 +130,12 @@ class _GuideScreenState extends State<GuideScreen> {
                   Expanded(child: GhostButton(label: 'CLEAR CAL',
                       onPressed: () => _safe(() => s.api!.guideClearCalibration(), 'Cal cleared'.tr(context)))),
                 ]),
+                const SizedBox(height: 6),
+                Row(children: [
+                  Expanded(child: PrimaryButton(label: 'CONNETTI PHD2'.tr(context), icon: Icons.usb,
+                      onPressed: () => _safe(() => s.api!.guideConnectEquipment(),
+                          'Connessione periferiche PHD2…'.tr(context)))),
+                ]),
                 SectionLabel('Equipaggiamento PHD2'.tr(context)),
                 _equipmentCard(s),
                 SectionLabel('Dither config'.tr(context)),

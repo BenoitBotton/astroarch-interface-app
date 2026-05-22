@@ -37,6 +37,35 @@ class SequenceRunner extends ChangeNotifier {
     appState.resetJobsStatus();
     notifyListeners();
 
+    // v0.2.37 — DITHER FIX: leggi i parametri dither configurati in Ekos/PHD2
+    // (amount/settle/frequency) una volta, invece di valori hardcoded.
+    // Priorita': override manuali app > valori dal bridge (/ekos_dither_settings)
+    // > default ragionevoli.
+    double dAmount = 5.0;
+    double dSettleTime = 30.0;
+    double dSettlePixels = 1.5;
+    int dFrequency = 1;
+    bool dRaOnly = false;
+    bool dEnabledGlobal = true;
+    try {
+      final ds = await appState.api!.ekosDitherSettings();
+      if (ds['amount'] != null) dAmount = (ds['amount'] as num).toDouble();
+      if (ds['settle_time'] != null) dSettleTime = (ds['settle_time'] as num).toDouble();
+      if (ds['settle_pixels'] != null) dSettlePixels = (ds['settle_pixels'] as num).toDouble();
+      if (ds['frequency'] != null) dFrequency = (ds['frequency'] as num).toInt();
+      if (ds['ra_only'] != null) dRaOnly = ds['ra_only'] == true;
+      if (ds['dither_enabled'] != null) dEnabledGlobal = ds['dither_enabled'] == true;
+    } catch (_) {}
+    // Override manuali impostati nella app (Guide → dither config)
+    if (appState.ditherAmountPx != null) dAmount = appState.ditherAmountPx!;
+    if (appState.ditherSettleSec != null) dSettleTime = appState.ditherSettleSec!;
+    if (appState.ditherSettlePixels != null) dSettlePixels = appState.ditherSettlePixels!;
+    if (appState.ditherFrequency != null) dFrequency = appState.ditherFrequency!;
+    if (appState.ditherRaOnly != null) dRaOnly = appState.ditherRaOnly!;
+    if (dFrequency < 1) dFrequency = 1;
+    final double dSettleTimeout = dSettleTime + 30.0;
+    int globalFrame = 0; // conta i frame totali per la frequency del dither
+
     try {
       for (int i = 0; i < appState.captureJobs.length; i++) {
         if (_abort) break;
@@ -115,14 +144,27 @@ class SequenceRunner extends ChangeNotifier {
             break;
           }
           job.doneCount = n + 1;
+          globalFrame++;
           notifyListeners();
 
-          // Dither
-          if (job.ditherEachFrame && n < job.count - 1) {
+          // Dither (v0.2.37 FIX): usa i parametri configurati in Ekos/PHD2
+          // (amount/settle/frequency/ra_only) invece di 3.0px hardcoded, e
+          // attende il vero SettleDone (wait=true → il bridge blocca fino al
+          // settling completo) invece di un delay fisso di 8s.
+          final bool ditherOn = dEnabledGlobal || job.ditherEachFrame;
+          final bool notLastFrame = n < job.count - 1;
+          if (ditherOn && notLastFrame && (globalFrame % dFrequency == 0)) {
             try {
-              await appState.api!.guideDither(amount: 3.0);
-              // Aspetta che PHD2 sia "settled"
-              await Future.delayed(const Duration(seconds: 8));
+              _statusMsg = 'Dither ${dAmount.toStringAsFixed(1)}px · settle ${dSettleTime.toStringAsFixed(0)}s…';
+              notifyListeners();
+              await appState.api!.guideDither(
+                amount: dAmount,
+                raOnly: dRaOnly,
+                settleTime: dSettleTime,
+                settlePixels: dSettlePixels,
+                settleTimeout: dSettleTimeout,
+                wait: true,
+              );
             } catch (_) {}
           }
 
