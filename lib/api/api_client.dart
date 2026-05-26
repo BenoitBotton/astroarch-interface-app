@@ -517,6 +517,9 @@ class ApiClient {
   /// ritorna le coordinate precise + oggetto candidato per la conferma goto.
   Future<Map<String, dynamic>> skymapTap(int x, int y, int width, int height) =>
       post('/api/skymap/tap', {'x': x, 'y': y, 'width': width, 'height': height});
+  /// Scorri la mappa trascinando: dx/dy = spostamento del dito in px immagine.
+  Future<Map<String, dynamic>> skymapPan(double dx, double dy, int width, int height) =>
+      post('/api/skymap/pan', {'dx': dx, 'dy': dy, 'width': width, 'height': height});
 
   // Observatory
   Future<Map<String, dynamic>> observatoryStatus() => get('/api/observatory/status');

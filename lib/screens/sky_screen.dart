@@ -35,6 +35,12 @@ class _SkyScreenState extends State<SkyScreen> {
   bool _busy = false;             // azione di controllo in corso
   final GlobalKey _imgKey = GlobalKey();
 
+  // --- Pan (trascinamento) ---
+  Offset _dragOffset = Offset.zero;   // offset visivo durante il drag
+  Offset _dragTotal = Offset.zero;    // delta totale del drag in px schermo
+  Offset? _panStartGlobal;            // posizione iniziale (per drag piccolo = tap)
+  bool _dragging = false;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +55,7 @@ class _SkyScreenState extends State<SkyScreen> {
   }
 
   Future<void> _tick() async {
-    if (_inflight || _busy) return;
+    if (_inflight || _busy || _dragging) return;
     final s = context.read<AppState>();
     if (s.api == null) return;
     _inflight = true;
@@ -94,16 +100,85 @@ class _SkyScreenState extends State<SkyScreen> {
     }
   }
 
+  // --- Pan (scorrimento col dito, come il mouse su KStars desktop) --------
+  // Calcola l'area effettiva dell'immagine (BoxFit.contain) entro il box.
+  ({double dispW, double dispH, double offX, double offY})? _imgRect() {
+    final box = _imgKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box == null) return null;
+    final size = box.size;
+    final imgAR = _imgW / _imgH;
+    final boxAR = size.width / size.height;
+    double dispW, dispH, offX, offY;
+    if (boxAR > imgAR) {
+      dispH = size.height; dispW = dispH * imgAR;
+      offX = (size.width - dispW) / 2; offY = 0;
+    } else {
+      dispW = size.width; dispH = dispW / imgAR;
+      offX = 0; offY = (size.height - dispH) / 2;
+    }
+    return (dispW: dispW, dispH: dispH, offX: offX, offY: offY);
+  }
+
+  void _onPanStart(DragStartDetails d) {
+    if (_busy) return;
+    _dragging = true;
+    _dragTotal = Offset.zero;
+    _dragOffset = Offset.zero;
+    _panStartGlobal = d.globalPosition;
+  }
+
+  void _onPanUpdate(DragUpdateDetails d) {
+    if (!_dragging) return;
+    setState(() {
+      _dragTotal += d.delta;
+      _dragOffset += d.delta;  // feedback visivo: l'immagine segue il dito
+    });
+  }
+
+  Future<void> _onPanEnd(DragEndDetails d) async {
+    if (!_dragging) return;
+    final total = _dragTotal;
+    final start = _panStartGlobal;
+    _dragging = false;
+    setState(() => _dragOffset = Offset.zero);
+
+    // Movimento minimo → è un tap, non un pan: apri il flusso goto
+    if (total.distance < 10) {
+      if (start != null) await _gotoAtGlobal(start);
+      return;
+    }
+    final s = context.read<AppState>();
+    final rect = _imgRect();
+    if (s.api == null || rect == null) return;
+    // Converti il delta da px schermo a px immagine richiesta
+    final dxImg = total.dx * (_imgW / rect.dispW);
+    final dyImg = total.dy * (_imgH / rect.dispH);
+    setState(() => _busy = true);
+    try {
+      await s.api!.skymapPan(dxImg, dyImg, _imgW, _imgH);
+    } catch (e) {
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+      await _tick(); // l'immagine ricaricata mostra il nuovo centro
+    }
+  }
+
+  // Tap pulito (onTapUp): tap-to-goto sul punto toccato
+  Future<void> _onTapImage(TapUpDetails d) async {
+    if (_dragging) return;
+    await _gotoAtGlobal(d.globalPosition);
+  }
+
   // --- FASE 2: tap → ricentra → conferma → goto ---------------------------
-  Future<void> _onTapImage(TapDownDetails d) async {
+  Future<void> _gotoAtGlobal(Offset globalPos) async {
     if (_busy) return;
     final s = context.read<AppState>();
     if (s.api == null) return;
-    // Dimensione renderizzata dell'immagine
     final box = _imgKey.currentContext?.findRenderObject() as RenderBox?;
     if (box == null) return;
     final size = box.size;
-    final local = box.globalToLocal(d.globalPosition);
+    final local = box.globalToLocal(globalPos);
     // L'immagine è BoxFit.contain: calcolo l'area effettiva
     final imgAR = _imgW / _imgH;
     final boxAR = size.width / size.height;
@@ -196,8 +271,38 @@ class _SkyScreenState extends State<SkyScreen> {
         ElevatedButton(onPressed: () => Navigator.pop(c, ctl.text), child: Text('CENTRA'.tr(context))),
       ],
     ));
-    if (name != null && name.trim().isNotEmpty) {
-      await _action(() => s.api!.skymapCenterObject(name.trim()).then((_) {}));
+    if (name == null || name.trim().isEmpty) return;
+    final q = name.trim();
+    setState(() => _busy = true);
+    try {
+      // Risoluzione robusta via SIMBAD/Sesame (capisce "M51", "M 51",
+      // "NGC 5194", "Whirlpool", "Vega"…) → coordinate → centra il SkyMap.
+      // Più affidabile di lookTowards che è schizzinoso sul formato nome.
+      final res = await s.api!.simbadSearch(q);
+      final raHours = (res['ra_hours'] as num?)?.toDouble();
+      final decDeg = (res['dec_deg'] as num?)?.toDouble();
+      if (raHours != null && decDeg != null) {
+        await s.api!.skymapCenterCoords(raHours * 15.0, decDeg);
+        if (mounted) showSnack(context, '${'Centrato su '.tr(context)}$q');
+      } else {
+        // fallback: prova comunque lookTowards lato KStars
+        await s.api!.skymapCenterObject(q);
+      }
+    } on ApiException catch (e) {
+      // SIMBAD non ha trovato → fallback lookTowards, poi messaggio chiaro
+      try {
+        await s.api!.skymapCenterObject(q);
+      } catch (_) {
+        if (mounted) showSnack(context, '${'Oggetto non trovato: '.tr(context)}$q', error: true);
+      }
+      if (e.status != 404 && mounted) {
+        // ignora, già gestito
+      }
+    } catch (e) {
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+      await _tick();
     }
   }
 
@@ -235,12 +340,19 @@ class _SkyScreenState extends State<SkyScreen> {
                   child: Stack(fit: StackFit.expand, children: [
                     if (_png != null)
                       GestureDetector(
-                        onTapDown: _onTapImage,
-                        child: Image.memory(_png!,
-                            key: _imgKey,
-                            fit: BoxFit.contain,
-                            gaplessPlayback: true,
-                            filterQuality: FilterQuality.medium),
+                        onTapUp: _onTapImage,
+                        onPanStart: _onPanStart,
+                        onPanUpdate: _onPanUpdate,
+                        onPanEnd: _onPanEnd,
+                        child: Transform.translate(
+                          // feedback visivo: durante il drag l'immagine segue il dito
+                          offset: _dragOffset,
+                          child: Image.memory(_png!,
+                              key: _imgKey,
+                              fit: BoxFit.contain,
+                              gaplessPlayback: true,
+                              filterQuality: FilterQuality.medium),
+                        ),
                       )
                     else if (_err != null)
                       Center(child: Padding(

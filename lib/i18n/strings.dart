@@ -269,6 +269,8 @@ class L10n {
     'Coordinate non disponibili': 'Coordinates not available',
     'Avvia KStars dalla Dashboard (LAUNCH KStars)':
         'Launch KStars from the Dashboard (LAUNCH KStars)',
+    'Centrato su ': 'Centered on ',
+    'Oggetto non trovato: ': 'Object not found: ',
 
     // ==== MOUNT =============================================================
     'Coordinate live': 'Live coordinates',
