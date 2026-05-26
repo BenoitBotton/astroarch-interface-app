@@ -25,16 +25,36 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   Timer? _tick;
+  // v0.2.37: stato live della sequenza Ekos Capture (per il contatore frame).
+  // Polling separato ogni 3s di /api/capture/ekos_status.
+  Timer? _ekosPoll;
+  Map<String, dynamic>? _ekosCap;
+
   @override
   void initState() {
     super.initState();
     _tick = Timer.periodic(const Duration(seconds: 2), (_) {
       if (mounted) setState(() {});
     });
+    _ekosPoll = Timer.periodic(const Duration(seconds: 3), (_) => _refreshEkosCap());
+    _refreshEkosCap();
   }
+
+  Future<void> _refreshEkosCap() async {
+    final s = context.read<AppState>();
+    if (s.api == null) return;
+    try {
+      final st = await s.api!.captureEkosStatus();
+      if (mounted) setState(() => _ekosCap = st);
+    } catch (_) {
+      // silenzioso: se Ekos non è raggiungibile lasciamo l'ultimo valore
+    }
+  }
+
   @override
   void dispose() {
     _tick?.cancel();
+    _ekosPoll?.cancel();
     super.dispose();
   }
 
@@ -521,6 +541,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final cam = s.cameraDevice();
     final exp = cam == null ? null : s.prop(cam, 'CCD_EXPOSURE');
     final remaining = (propValue(exp, 'CCD_EXPOSURE_VALUE') as num?)?.toDouble();
+
+    // v0.2.37: contatore frame del job Ekos in corso (X/Y frames).
+    // job_image_progress = scatti GIA' COMPLETATI; job_image_count = totale.
+    // Es. mentre scatta il 30°, ne sono completati 29 → "29/200".
+    final done = (_ekosCap?['job_image_progress'] as num?)?.toInt();
+    final total = (_ekosCap?['job_image_count'] as num?)?.toInt();
+    final activeId = (_ekosCap?['active_job_id'] as num?)?.toInt() ?? -1;
+    final jobState = _ekosCap?['job_state']?.toString();
+    final hasCounter = done != null && total != null && total > 0 && activeId >= 0;
+    final overallRemaining = (_ekosCap?['overall_remaining_seconds'] as num?)?.toInt();
+
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -541,21 +572,73 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: exp?['state'] == 'Busy' ? null : 0.0,
-            backgroundColor: T.line(c),
-            color: T.accent(c),
-            minHeight: 5,
+          // v0.2.37: riga contatore frame X/Y (solo se c'è un job attivo)
+          if (hasCounter) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [
+                  Icon(Icons.collections, size: 14, color: T.accent(c)),
+                  const SizedBox(width: 6),
+                  Text('FRAMES'.tr(c), style: TextStyle(
+                      color: T.muted(c), fontSize: 10.5, letterSpacing: 1.2)),
+                ]),
+                Text('$done/$total',
+                    style: TextStyle(color: T.accent(c), fontSize: 16,
+                        fontWeight: FontWeight.w700, fontFamily: 'monospace')),
+              ],
+            ),
+            const SizedBox(height: 6),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(3),
+              child: LinearProgressIndicator(
+                value: (done / total).clamp(0.0, 1.0),
+                backgroundColor: T.line(c),
+                color: T.accent(c),
+                minHeight: 6,
+              ),
+            ),
+            const SizedBox(height: 6),
+          ] else
+            const SizedBox(height: 8),
+          // Barra esposizione corrente (indeterminata mentre Busy)
+          if (!hasCounter)
+            LinearProgressIndicator(
+              value: exp?['state'] == 'Busy' ? null : 0.0,
+              backgroundColor: T.line(c),
+              color: T.accent(c),
+              minHeight: 5,
+            ),
+          if (!hasCounter) const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                remaining == null ? 'idle' : '${remaining.toStringAsFixed(0)}s ${'rimanenti'.tr(c)}',
+                style: TextStyle(color: T.muted(c), fontSize: 11),
+              ),
+              if (hasCounter && overallRemaining != null && overallRemaining > 0)
+                Text('${_fmtHms(overallRemaining)} ${'al termine'.tr(c)}',
+                    style: TextStyle(color: T.muted(c), fontSize: 11)),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            remaining == null ? 'idle' : '${remaining.toStringAsFixed(0)}s ${'rimanenti'.tr(c)}',
-            style: TextStyle(color: T.muted(c), fontSize: 11),
+          if (hasCounter && jobState != null) Padding(
+            padding: const EdgeInsets.only(top: 2),
+            child: Text(jobState,
+                style: TextStyle(color: T.muted(c), fontSize: 10.5)),
           ),
         ],
       ),
     );
+  }
+
+  /// Formatta secondi in "Xh Ym" o "Ym" per il tempo residuo totale.
+  String _fmtHms(int secs) {
+    final h = secs ~/ 3600;
+    final m = (secs % 3600) ~/ 60;
+    if (h > 0) return '${h}h ${m}m';
+    return '${m}m';
   }
 
   Widget _weatherCard(BuildContext c, AppState s) {

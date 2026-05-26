@@ -251,6 +251,8 @@ class L10n {
     'In attesa del primo scatto…': 'Waiting for first frame…',
     'Esposizione corrente': 'Current exposure',
     'rimanenti': 'remaining',
+    'FRAMES': 'FRAMES',
+    'al termine': 'to finish',
 
     // ==== MOUNT =============================================================
     'Coordinate live': 'Live coordinates',
