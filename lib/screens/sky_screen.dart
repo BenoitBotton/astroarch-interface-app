@@ -140,27 +140,48 @@ class _SkyScreenState extends State<SkyScreen> {
     final total = _dragTotal;
     final start = _panStartGlobal;
     _dragging = false;
-    setState(() => _dragOffset = Offset.zero);
 
     // Movimento minimo → è un tap, non un pan: apri il flusso goto
     if (total.distance < 10) {
+      setState(() => _dragOffset = Offset.zero);
       if (start != null) await _gotoAtGlobal(start);
       return;
     }
     final s = context.read<AppState>();
     final rect = _imgRect();
-    if (s.api == null || rect == null) return;
+    if (s.api == null || rect == null) {
+      setState(() => _dragOffset = Offset.zero);
+      return;
+    }
     // Converti il delta da px schermo a px immagine richiesta
     final dxImg = total.dx * (_imgW / rect.dispW);
     final dyImg = total.dy * (_imgH / rect.dispH);
+    // IMPORTANTE: NON resetto _dragOffset qui. L'immagine resta dov'è il dito
+    // finché non arriva quella nuova ricentrata → swap atomico, niente scatto.
     setState(() => _busy = true);
     try {
       await s.api!.skymapPan(dxImg, dyImg, _imgW, _imgH);
+      // Scarico subito la nuova immagine centrata e faccio lo swap atomico:
+      // nuovo PNG + reset offset NELLO STESSO setState → transizione fluida.
+      final j = await s.api!.skymapView(width: _imgW, height: _imgH);
+      final b64 = j['png_base64'] as String?;
+      if (!mounted) return;
+      if (b64 != null) {
+        setState(() {
+          _png = base64.decode(b64);
+          _focus = (j['focus'] as Map?)?.cast<String, dynamic>();
+          _dragOffset = Offset.zero;
+          _err = null;
+          _busy = false;
+        });
+      } else {
+        setState(() { _dragOffset = Offset.zero; _busy = false; });
+      }
     } catch (e) {
-      if (mounted) showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-      await _tick(); // l'immagine ricaricata mostra il nuovo centro
+      if (mounted) {
+        setState(() { _dragOffset = Offset.zero; _busy = false; });
+        showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
+      }
     }
   }
 
