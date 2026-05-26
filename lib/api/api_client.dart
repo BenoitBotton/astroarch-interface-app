@@ -488,6 +488,36 @@ class ApiClient {
   Future<Map<String, dynamic>> guideFullFrame({int maxDim = 1024}) =>
       get('/api/guide/full_frame', {'max_dim': '$maxDim'});
 
+  // === Planetario KStars (v0.2.40) ========================================
+  /// Esporta il SkyMap di KStars come PNG + info di focus (centro RA/Dec, FOV).
+  /// Ritorna {width, height, png_base64, focus:{ra_deg,dec_deg,fov_deg,object,...}}.
+  Future<Map<String, dynamic>> skymapView({int width = 900, int height = 600, double? fovDeg}) =>
+      get('/api/skymap/view', {
+        'width': '$width', 'height': '$height',
+        if (fovDeg != null) 'fov': '$fovDeg',
+      });
+  /// Centro/FOV/oggetto correnti del planetario.
+  Future<Map<String, dynamic>> skymapFocus() => get('/api/skymap/focus');
+  /// Centra il planetario su un oggetto per nome (es. "M 51").
+  Future<Map<String, dynamic>> skymapCenterObject(String object) =>
+      post('/api/skymap/center', {'object': object});
+  /// Centra il planetario su coordinate (gradi).
+  Future<Map<String, dynamic>> skymapCenterCoords(double raDeg, double decDeg) =>
+      post('/api/skymap/center', {'ra_deg': raDeg, 'dec_deg': decDeg});
+  /// Centra sulla posizione corrente del telescopio.
+  Future<Map<String, dynamic>> skymapCenterTelescope() =>
+      post('/api/skymap/center_telescope', {});
+  /// Zoom: fovDeg target oppure dir "in"/"out".
+  Future<Map<String, dynamic>> skymapZoom({double? fovDeg, String? dir}) =>
+      post('/api/skymap/zoom', {
+        if (fovDeg != null) 'fov_deg': fovDeg,
+        if (dir != null) 'dir': dir,
+      });
+  /// FASE 2: tap-to-goto. Manda il pixel toccato; il bridge ricentra lì e
+  /// ritorna le coordinate precise + oggetto candidato per la conferma goto.
+  Future<Map<String, dynamic>> skymapTap(int x, int y, int width, int height) =>
+      post('/api/skymap/tap', {'x': x, 'y': y, 'width': width, 'height': height});
+
   // Observatory
   Future<Map<String, dynamic>> observatoryStatus() => get('/api/observatory/status');
   Future<void> domeShutter(String device, bool open) =>

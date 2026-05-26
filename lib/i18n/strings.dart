@@ -254,6 +254,22 @@ class L10n {
     'FRAMES': 'FRAMES',
     'al termine': 'to finish',
 
+    // ==== PLANETARIO (sky map) ==============================================
+    'Planetario': 'Planetarium',
+    'Tap = vai qui': 'Tap = go here',
+    'Telescopio': 'Telescope',
+    'Cerca oggetto': 'Search object',
+    'M 51, NGC 7000, Vega…': 'M 51, NGC 7000, Vega…',
+    'CENTRA': 'CENTER',
+    'Vai su questo punto?': 'Go to this point?',
+    'Il telescopio si muoverà su queste coordinate.':
+        'The telescope will slew to these coordinates.',
+    'GOTO': 'GOTO',
+    'Goto avviato: ': 'Goto started: ',
+    'Coordinate non disponibili': 'Coordinates not available',
+    'Avvia KStars dalla Dashboard (LAUNCH KStars)':
+        'Launch KStars from the Dashboard (LAUNCH KStars)',
+
     // ==== MOUNT =============================================================
     'Coordinate live': 'Live coordinates',
     'Cerca target (SIMBAD)': 'Search target (SIMBAD)',

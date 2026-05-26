@@ -14,6 +14,7 @@ import 'indi_panel_screen.dart';
 import 'files_screen.dart';
 import 'logs_screen.dart';
 import 'live_view_screen.dart';
+import 'sky_screen.dart';
 import 'activity_log_screen.dart';
 import 'connections_screen.dart';
 import 'setup_screen.dart';
@@ -115,6 +116,10 @@ class _AppDrawer extends StatelessWidget {
             _navTile(context, Icons.center_focus_strong, 'Live View'.tr(context), () {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const LiveViewScreen()));
+            }),
+            _navTile(context, Icons.public, 'Planetario'.tr(context), () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SkyScreen()));
             }),
             _navTile(context, Icons.tune, 'Focus'.tr(context), () {
               Navigator.pop(context);
