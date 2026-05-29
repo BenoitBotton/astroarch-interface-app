@@ -79,6 +79,42 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text('Nebulosa blu/viola con campo stellato'.tr(context),
                     style: TextStyle(color: T.muted(context), fontSize: 11)),
               ),
+              const Divider(height: 1),
+              RadioListTile<AppThemeMode>(
+                value: AppThemeMode.interstellar,
+                groupValue: s.themeMode,
+                onChanged: (v) { if (v != null) s.setThemeMode(v); },
+                secondary: Icon(Icons.rocket_launch, color: T.accent(context)),
+                title: const Text('Interstellar'),
+                subtitle: Text('Cinematografico blu-ghiaccio · animato'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
+              RadioListTile<AppThemeMode>(
+                value: AppThemeMode.starTrek,
+                groupValue: s.themeMode,
+                onChanged: (v) { if (v != null) s.setThemeMode(v); },
+                secondary: Icon(Icons.travel_explore, color: T.accent(context)),
+                title: const Text('Star Trek'),
+                subtitle: Text('Console LCARS · animato'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
+              // Disclaimer batteria + copyright (richiesti)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    Icon(Icons.battery_alert, size: 13, color: T.warn(context)),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(
+                      'I temi animati (Interstellar, Star Trek) consumano più batteria e CPU.'.tr(context),
+                      style: TextStyle(color: T.warn(context), fontSize: 10.5))),
+                  ]),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Interstellar™ e Star Trek™ sono marchi dei rispettivi proprietari. Temi a tema realizzati da fan, non ufficiali e non affiliati. Font Google Fonts (Open Font License).'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 9.5)),
+                ]),
+              ),
             ]),
           ),
           const SizedBox(height: 18),

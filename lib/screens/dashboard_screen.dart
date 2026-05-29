@@ -146,9 +146,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      // v0.2.44: in tema Deep Space mostra il campo stellato dietro al contenuto.
+      // v0.2.44/0.2.45: sfondo a tema dietro al contenuto (deepSpace statico,
+      // interstellar/starTrek animati). No-op sui temi non scenici.
       body: StarfieldBackground(
-        enabled: state.themeMode == AppThemeMode.deepSpace,
+        mode: state.themeMode,
         child: RefreshIndicator(
         onRefresh: () async {
           await state.refreshSnapshot();

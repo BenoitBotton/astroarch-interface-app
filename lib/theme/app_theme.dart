@@ -1,23 +1,37 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
-/// I tre temi dell'app:
-///  - pro       : ambra/blu, default operativo, alta leggibilità
-///  - night     : red-light, NON disturba l'adattamento al buio degli occhi
-///  - deepSpace : blu/viola nebulosa, con campo stellato a tema astronomia
-enum AppThemeMode { pro, night, deepSpace }
+/// I temi dell'app:
+///  - pro          : ambra/blu, default operativo, alta leggibilità
+///  - night        : red-light, NON disturba l'adattamento al buio degli occhi
+///  - deepSpace    : blu/viola nebulosa, con campo stellato a tema astronomia
+///  - interstellar : sobrio cinematografico, blu-ghiaccio, font Exo 2, animato*
+///  - starTrek     : console LCARS, pannelli arancio/viola, font Oswald, animato*
+/// (* temi "scenici": animazioni → maggior consumo batteria/CPU)
+enum AppThemeMode { pro, night, deepSpace, interstellar, starTrek }
 
 extension AppThemeModeX on AppThemeMode {
   String get id => switch (this) {
         AppThemeMode.pro => 'pro',
         AppThemeMode.night => 'night',
         AppThemeMode.deepSpace => 'deep_space',
+        AppThemeMode.interstellar => 'interstellar',
+        AppThemeMode.starTrek => 'star_trek',
       };
   static AppThemeMode fromId(String? s) => switch (s) {
         'night' => AppThemeMode.night,
         'deep_space' => AppThemeMode.deepSpace,
+        'interstellar' => AppThemeMode.interstellar,
+        'star_trek' => AppThemeMode.starTrek,
         _ => AppThemeMode.pro,
       };
+  /// Temi "scenici" con animazioni (consumo maggiore).
+  bool get isScenic => this == AppThemeMode.deepSpace ||
+      this == AppThemeMode.interstellar || this == AppThemeMode.starTrek;
+  /// Animazioni marcate (interstellar/starTrek). DeepSpace è statico.
+  bool get isAnimated => this == AppThemeMode.interstellar ||
+      this == AppThemeMode.starTrek;
 }
 
 /// Theme dell'app - Pro (ambra), Notte (rosso), Deep Space (nebulosa).
@@ -59,10 +73,36 @@ class AppTheme {
   static const Color dsOk = Color(0xFF3EE0A0);
   static const Color dsErr = Color(0xFFFF5B7E);
 
+  // Colori Interstellar (sobrio, cinematografico: blu-ghiaccio + ambra)
+  static const Color isBg = Color(0xFF02040A);
+  static const Color isPanel = Color(0xFF0A0F18);
+  static const Color isPanel2 = Color(0xFF111824);
+  static const Color isLine = Color(0xFF1E2A3A);
+  static const Color isText = Color(0xFFDCE6F0);
+  static const Color isMuted = Color(0xFF6E7E92);
+  static const Color isAccent = Color(0xFF9FC3E0);   // blu ghiaccio
+  static const Color isAccent2 = Color(0xFFE0A85C);  // ambra (Endurance)
+  static const Color isOk = Color(0xFF7FD0C0);
+  static const Color isErr = Color(0xFFE06B6B);
+
+  // Colori Star Trek / LCARS (pannelli arancio/viola/azzurro su nero)
+  static const Color stBg = Color(0xFF000000);
+  static const Color stPanel = Color(0xFF1A1326);
+  static const Color stPanel2 = Color(0xFF241A33);
+  static const Color stLine = Color(0xFF3A2A4E);
+  static const Color stText = Color(0xFFFFF0D8);
+  static const Color stMuted = Color(0xFF9C88C0);
+  static const Color stAccent = Color(0xFFFF9C00);   // LCARS orange
+  static const Color stAccent2 = Color(0xFF9C9CFF);  // LCARS periwinkle
+  static const Color stOk = Color(0xFFCC99CC);
+  static const Color stErr = Color(0xFFFF5555);
+
   /// Ritorna il ThemeData per il modo richiesto.
   static ThemeData forMode(AppThemeMode m) => switch (m) {
         AppThemeMode.night => buildNight(),
         AppThemeMode.deepSpace => buildDeepSpace(),
+        AppThemeMode.interstellar => buildInterstellar(),
+        AppThemeMode.starTrek => buildStarTrek(),
         AppThemeMode.pro => buildPro(),
       };
 
@@ -84,13 +124,39 @@ class AppTheme {
         ok: dsOk, err: dsErr,
       );
 
+  // Font tematici (Google Fonts, licenza Open Font — fetch+cache a runtime).
+  static TextTheme _interstellarFont(TextTheme base) =>
+      GoogleFonts.exo2TextTheme(base);
+  static TextTheme _starTrekFont(TextTheme base) =>
+      GoogleFonts.oswaldTextTheme(base);
+
+  static ThemeData buildInterstellar() => _build(
+        bg: isBg, panel: isPanel, panel2: isPanel2, line: isLine,
+        text: isText, muted: isMuted, accent: isAccent, accent2: isAccent2,
+        ok: isOk, err: isErr, fontBuilder: _interstellarFont,
+      );
+
+  static ThemeData buildStarTrek() => _build(
+        bg: stBg, panel: stPanel, panel2: stPanel2, line: stLine,
+        text: stText, muted: stMuted, accent: stAccent, accent2: stAccent2,
+        ok: stOk, err: stErr, fontBuilder: _starTrekFont,
+        cardRadius: 18, // pannelli LCARS più arrotondati
+      );
+
   static ThemeData _build({
     required Color bg, required Color panel, required Color panel2,
     required Color line, required Color text, required Color muted,
     required Color accent, required Color accent2,
     required Color ok, required Color err,
+    TextTheme Function(TextTheme)? fontBuilder,
+    double cardRadius = 14,
   }) {
     final base = ThemeData.dark(useMaterial3: true);
+    // Font tematico (se fornito) applicato al textTheme, con fallback sicuro.
+    TextTheme themedText = base.textTheme;
+    if (fontBuilder != null) {
+      try { themedText = fontBuilder(base.textTheme); } catch (_) {}
+    }
     return base.copyWith(
       scaffoldBackgroundColor: bg,
       colorScheme: ColorScheme.dark(
@@ -117,12 +183,12 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           side: BorderSide(color: line),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(cardRadius),
         ),
         margin: EdgeInsets.zero,
       ),
       dividerColor: line,
-      textTheme: base.textTheme.apply(bodyColor: text, displayColor: text),
+      textTheme: themedText.apply(bodyColor: text, displayColor: text),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: panel,
@@ -182,31 +248,83 @@ class AppTheme {
   }
 }
 
-/// Sfondo campo stellato per il tema Deep Space.
-/// Dipinge stelle + un alone di nebulosa molto sottili dietro al contenuto.
-/// Deterministico (seed fisso) → non "sfarfalla" ad ogni rebuild.
-/// In tema non-deepSpace è completamente trasparente (no-op visivo).
-class StarfieldBackground extends StatelessWidget {
+/// Sfondo a tema dietro al contenuto. Stile e animazione dipendono dal
+/// tema attivo:
+///  - deepSpace    : campo stellato + nebulosa, STATICO (no batteria extra)
+///  - interstellar : stelle in drift lento + aloni che pulsano (animato)
+///  - starTrek     : scan-line LCARS che scorre + stelle (animato)
+///  - altri temi   : trasparente (no-op)
+/// Deterministico (seed fisso) → niente sfarfallio. Animazione solo per i
+/// temi scenici animati.
+class StarfieldBackground extends StatefulWidget {
   final Widget child;
-  final bool enabled;
-  const StarfieldBackground({super.key, required this.child, this.enabled = true});
+  final AppThemeMode mode;
+  const StarfieldBackground({super.key, required this.child, required this.mode});
+
+  @override
+  State<StarfieldBackground> createState() => _StarfieldBackgroundState();
+}
+
+class _StarfieldBackgroundState extends State<StarfieldBackground>
+    with SingleTickerProviderStateMixin {
+  AnimationController? _ctrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _setupAnim();
+  }
+
+  void _setupAnim() {
+    _ctrl?.dispose();
+    _ctrl = null;
+    if (widget.mode.isAnimated) {
+      _ctrl = AnimationController(
+        vsync: this,
+        duration: const Duration(seconds: 18), // lento → poco consumo
+      )..repeat();
+    }
+  }
+
+  @override
+  void didUpdateWidget(StarfieldBackground old) {
+    super.didUpdateWidget(old);
+    if (old.mode != widget.mode) _setupAnim();
+  }
+
+  @override
+  void dispose() {
+    _ctrl?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (!enabled) return child;
+    if (!widget.mode.isScenic) return widget.child;
+    if (_ctrl == null) {
+      // statico (deepSpace)
+      return Stack(children: [
+        Positioned.fill(child: IgnorePointer(
+            child: CustomPaint(painter: _StarfieldPainter(widget.mode, 0)))),
+        widget.child,
+      ]);
+    }
     return Stack(children: [
-      Positioned.fill(
-        child: IgnorePointer(
-          child: CustomPaint(painter: _StarfieldPainter()),
-        ),
-      ),
-      child,
+      Positioned.fill(child: IgnorePointer(child: AnimatedBuilder(
+        animation: _ctrl!,
+        builder: (_, __) => CustomPaint(
+            painter: _StarfieldPainter(widget.mode, _ctrl!.value)),
+      ))),
+      widget.child,
     ]);
   }
 }
 
 class _StarfieldPainter extends CustomPainter {
-  // seed fisso → posizioni stabili tra repaint
+  final AppThemeMode mode;
+  final double t; // 0..1 fase animazione
+  _StarfieldPainter(this.mode, this.t);
+
   static final List<_Star> _stars = _gen();
   static List<_Star> _gen() {
     final r = math.Random(20260527);
@@ -219,30 +337,59 @@ class _StarfieldPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Aloni di nebulosa (2 macchie morbide viola/ciano molto tenui)
-    final neb1 = Paint()
-      ..shader = RadialGradient(colors: [
-        const Color(0x228B7CFF), const Color(0x00000000),
-      ]).createShader(Rect.fromCircle(
-          center: Offset(size.width * 0.25, size.height * 0.28),
-          radius: size.width * 0.5));
-    canvas.drawRect(Offset.zero & size, neb1);
-    final neb2 = Paint()
-      ..shader = RadialGradient(colors: [
-        const Color(0x1842E8E0), const Color(0x00000000),
-      ]).createShader(Rect.fromCircle(
-          center: Offset(size.width * 0.8, size.height * 0.7),
-          radius: size.width * 0.45));
-    canvas.drawRect(Offset.zero & size, neb2);
-    // Stelle
+    switch (mode) {
+      case AppThemeMode.deepSpace:
+        _paintNebula(canvas, size, const Color(0x228B7CFF), const Color(0x1842E8E0));
+        _paintStars(canvas, size, 0);
+        break;
+      case AppThemeMode.interstellar:
+        // drift orizzontale lento + aloni pulsanti blu-ghiaccio/ambra
+        final pulse = 0.5 + 0.5 * math.sin(t * 2 * math.pi);
+        _paintNebula(canvas, size,
+            Color.fromRGBO(159, 195, 224, 0.10 + 0.05 * pulse),
+            Color.fromRGBO(224, 168, 92, 0.06 + 0.04 * (1 - pulse)));
+        _paintStars(canvas, size, t * 0.04); // drift molto lento
+        break;
+      case AppThemeMode.starTrek:
+        // sfondo nero + qualche stella + scan-line LCARS arancione
+        _paintStars(canvas, size, 0);
+        final y = (t * size.height) % size.height;
+        final scan = Paint()
+          ..shader = LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: const [Color(0x00FF9C00), Color(0x33FF9C00), Color(0x00FF9C00)],
+          ).createShader(Rect.fromLTWH(0, y - 40, size.width, 80));
+        canvas.drawRect(Rect.fromLTWH(0, y - 40, size.width, 80), scan);
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _paintNebula(Canvas canvas, Size size, Color c1, Color c2) {
+    final p1 = Paint()..shader = RadialGradient(colors: [c1, const Color(0x00000000)])
+        .createShader(Rect.fromCircle(
+            center: Offset(size.width * 0.25, size.height * 0.28),
+            radius: size.width * 0.5));
+    canvas.drawRect(Offset.zero & size, p1);
+    final p2 = Paint()..shader = RadialGradient(colors: [c2, const Color(0x00000000)])
+        .createShader(Rect.fromCircle(
+            center: Offset(size.width * 0.8, size.height * 0.7),
+            radius: size.width * 0.45));
+    canvas.drawRect(Offset.zero & size, p2);
+  }
+
+  void _paintStars(Canvas canvas, Size size, double driftX) {
     for (final s in _stars) {
+      final x = ((s.x + driftX) % 1.0) * size.width;
       final p = Paint()..color = Colors.white.withValues(alpha: s.alpha);
-      canvas.drawCircle(Offset(s.x * size.width, s.y * size.height), s.r, p);
+      canvas.drawCircle(Offset(x, s.y * size.height), s.r, p);
     }
   }
 
   @override
-  bool shouldRepaint(covariant _StarfieldPainter old) => false;
+  bool shouldRepaint(covariant _StarfieldPainter old) =>
+      old.t != t || old.mode != mode;
 }
 
 class _Star {

@@ -80,6 +80,12 @@ class L10n {
     'Notifiche': 'Notifications',
     'Avvisi osservatorio': 'Observatory alerts',
     'Sequenza finita, stella persa, errori': 'Sequence done, star lost, errors',
+    'Cinematografico blu-ghiaccio · animato': 'Cinematic ice-blue · animated',
+    'Console LCARS · animato': 'LCARS console · animated',
+    'I temi animati (Interstellar, Star Trek) consumano più batteria e CPU.':
+        'Animated themes (Interstellar, Star Trek) use more battery and CPU.',
+    'Interstellar™ e Star Trek™ sono marchi dei rispettivi proprietari. Temi a tema realizzati da fan, non ufficiali e non affiliati. Font Google Fonts (Open Font License).':
+        'Interstellar™ and Star Trek™ are trademarks of their respective owners. Fan-made themes, unofficial and not affiliated. Fonts via Google Fonts (Open Font License).',
     'Luce rossa, non rovina la visione notturna': 'Red light, preserves night vision',
     'Nebulosa blu/viola con campo stellato': 'Blue/violet nebula with starfield',
     'Switch fallito: ': 'Switch failed: ',
