@@ -125,10 +125,13 @@ class AppTheme {
       );
 
   // Font tematici (Google Fonts, licenza Open Font — fetch+cache a runtime).
+  // Interstellar → Exo 2 (sans tech, estetica cinematografica minimalista).
+  // Star Trek → Antonio (condensato, look LCARS — alternativa libera al
+  //   font ufficiale, che è protetto da copyright).
   static TextTheme _interstellarFont(TextTheme base) =>
       GoogleFonts.exo2TextTheme(base);
   static TextTheme _starTrekFont(TextTheme base) =>
-      GoogleFonts.oswaldTextTheme(base);
+      GoogleFonts.antonioTextTheme(base);
 
   static ThemeData buildInterstellar() => _build(
         bg: isBg, panel: isPanel, panel2: isPanel2, line: isLine,
@@ -343,15 +346,16 @@ class _StarfieldPainter extends CustomPainter {
         _paintStars(canvas, size, 0);
         break;
       case AppThemeMode.interstellar:
-        // drift orizzontale lento + aloni pulsanti blu-ghiaccio/ambra
+        // drift orizzontale lento + aloni pulsanti + disco di Gargantua
         final pulse = 0.5 + 0.5 * math.sin(t * 2 * math.pi);
         _paintNebula(canvas, size,
             Color.fromRGBO(159, 195, 224, 0.10 + 0.05 * pulse),
             Color.fromRGBO(224, 168, 92, 0.06 + 0.04 * (1 - pulse)));
         _paintStars(canvas, size, t * 0.04); // drift molto lento
+        _paintGargantua(canvas, size, t);    // buco nero iconico
         break;
       case AppThemeMode.starTrek:
-        // sfondo nero + qualche stella + scan-line LCARS arancione
+        // sfondo nero + stelle + scan-line LCARS + starship che scorre
         _paintStars(canvas, size, 0);
         final y = (t * size.height) % size.height;
         final scan = Paint()
@@ -360,6 +364,7 @@ class _StarfieldPainter extends CustomPainter {
             colors: const [Color(0x00FF9C00), Color(0x33FF9C00), Color(0x00FF9C00)],
           ).createShader(Rect.fromLTWH(0, y - 40, size.width, 80));
         canvas.drawRect(Rect.fromLTWH(0, y - 40, size.width, 80), scan);
+        _paintStarship(canvas, size, t);     // silhouette nave (originale)
         break;
       default:
         break;
@@ -385,6 +390,69 @@ class _StarfieldPainter extends CustomPainter {
       final p = Paint()..color = Colors.white.withValues(alpha: s.alpha);
       canvas.drawCircle(Offset(x, s.y * size.height), s.r, p);
     }
+  }
+
+  /// Disco di accrescimento "Gargantua" (originale, ispirato a Interstellar):
+  /// sfera nera + anello luminoso + arco di lensing gravitazionale sopra.
+  /// Piccolo, in alto a destra, con rotazione lenta dell'anello.
+  void _paintGargantua(Canvas canvas, Size size, double t) {
+    final c = Offset(size.width * 0.82, size.height * 0.16);
+    final r = size.width * 0.13;
+    canvas.save();
+    // anello di accrescimento (ellisse schiacciata) con gradient ambra
+    final ringRect = Rect.fromCenter(center: c, width: r * 3.4, height: r * 0.9);
+    final ring = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = r * 0.28
+      ..shader = SweepGradient(
+        transform: GradientRotation(t * 2 * math.pi),
+        colors: const [
+          Color(0x00E0A85C), Color(0x88FFC878), Color(0xCCFFE0A0),
+          Color(0x88FFC878), Color(0x00E0A85C),
+        ],
+      ).createShader(ringRect);
+    canvas.drawOval(ringRect, ring);
+    // arco di lensing sopra (la "corona" verticale tipica)
+    final lens = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = r * 0.18
+      ..shader = LinearGradient(colors: const [
+        Color(0x00FFC878), Color(0x99FFE0A0), Color(0x00FFC878),
+      ]).createShader(Rect.fromCircle(center: c, radius: r * 1.3));
+    canvas.drawArc(Rect.fromCircle(center: c, radius: r * 1.25),
+        math.pi, math.pi, false, lens);
+    // sfera nera (orizzonte degli eventi)
+    canvas.drawCircle(c, r, Paint()..color = const Color(0xFF000000));
+    canvas.drawCircle(c, r, Paint()
+      ..style = PaintingStyle.stroke ..strokeWidth = 1
+      ..color = const Color(0x33FFE0A0));
+    canvas.restore();
+  }
+
+  /// Silhouette di una starship (forma ORIGINALE generica: scafo a disco +
+  /// due gondole) che scorre lentamente in orizzontale. Non riproduce
+  /// navi protette da copyright.
+  void _paintStarship(Canvas canvas, Size size, double t) {
+    final x = (t * 1.4 - 0.2) * size.width; // entra ed esce dai bordi
+    final y = size.height * 0.20;
+    final s = size.width * 0.05; // scala
+    final col = const Color(0x44FF9C00);
+    final p = Paint()..color = col;
+    canvas.save();
+    canvas.translate(x, y);
+    // scafo a disco (ellisse)
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: s * 2.2, height: s * 0.7), p);
+    // corpo posteriore
+    canvas.drawRRect(RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(0, s * 0.55), width: s * 0.7, height: s * 0.9),
+        Radius.circular(s * 0.2)), p);
+    // due gondole
+    for (final dx in [-s * 0.8, s * 0.8]) {
+      canvas.drawRRect(RRect.fromRectAndRadius(
+          Rect.fromCenter(center: Offset(dx, s * 1.0), width: s * 0.3, height: s * 1.1),
+          Radius.circular(s * 0.15)), p);
+    }
+    canvas.restore();
   }
 
   @override

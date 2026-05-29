@@ -4,6 +4,7 @@ import '../api/api_client.dart';
 import '../i18n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../theme/transitions.dart';
 import '../widgets/common.dart';
 import '../services/notification_watcher.dart';
 import 'dashboard_screen.dart';
@@ -66,7 +67,24 @@ class _ShellScreenState extends State<ShellScreen> {
         // Watcher invisibile per le notifiche locali (v0.2.44).
         const NotificationWatcher(),
         if (wsDown) _ConnectionBanner(label: s.wsStateLabel),
-        Expanded(child: _bottomScreens[_idx]),
+        // v0.2.46: transizione a tema al cambio tab (teletrasporto Star Trek /
+        // risucchio Gargantua Interstellar). Istantaneo su Pro/Notte.
+        Expanded(
+          child: AnimatedSwitcher(
+            duration: ThemedTransitions.durationFor(s.themeMode),
+            transitionBuilder: (child, anim) =>
+                ThemedTransitions.build(s.themeMode, child, anim),
+            // layout: la nuova schermata sopra; evita salti durante lo switch
+            layoutBuilder: (current, previous) => Stack(
+              alignment: Alignment.topCenter,
+              children: [...previous, if (current != null) current],
+            ),
+            child: KeyedSubtree(
+              key: ValueKey(_idx),
+              child: _bottomScreens[_idx],
+            ),
+          ),
+        ),
       ]),
       // FAB ABORT di emergenza: sempre raggiungibile da tutte le 5 schermate.
       // Apre un bottom-sheet con gli stop critici (sequenza/guida/montatura).
