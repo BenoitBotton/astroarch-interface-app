@@ -41,6 +41,7 @@ class L10n {
     'Elimina': 'Delete',
     'Switch a ': 'Switch to ',
     'Connesso a ': 'Connected to ',
+    'Connessione a ': 'Connecting to ',
     'Switch fallito: ': 'Switch failed: ',
     'Rinomina bridge': 'Rename bridge',
     'Eliminare la bridge?': 'Delete the bridge?',

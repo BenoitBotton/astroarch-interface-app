@@ -150,7 +150,12 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
                 ])),
           ],
         ),
-        onTap: _switching || isActive ? null : () => _switchTo(b),
+        // v0.2.43: il tap funziona ANCHE sul profilo attivo — connette
+        // direttamente senza fare switch (evita reset inutile dello stato).
+        // Quando connect ha successo, MaterialApp passa automaticamente a
+        // ShellScreen (la "schermata operativa" del bridge).
+        onTap: _switching ? null : () =>
+            isActive ? _connectActive(b) : _switchTo(b),
       ),
     );
   }
@@ -176,6 +181,25 @@ class _ConnectionsScreenState extends State<ConnectionsScreen> {
     } else {
       showSnack(context,
           '${'Switch fallito: '.tr(context)}${s.lastConnectError ?? "—"}',
+          error: true);
+    }
+  }
+
+  /// v0.2.43: tap sul bridge GIA' ATTIVO → connette direttamente
+  /// (niente switchTo per non resettare lo stato locale). Al successo
+  /// MaterialApp passa automaticamente a ShellScreen.
+  Future<void> _connectActive(BridgeConnection b) async {
+    final s = context.read<AppState>();
+    setState(() => _switching = true);
+    showSnack(context, '${'Connessione a '.tr(context)}${b.name}…');
+    final ok = await s.connect();
+    if (!mounted) return;
+    setState(() => _switching = false);
+    if (ok) {
+      showSnack(context, '${'Connesso a '.tr(context)}${b.name}');
+    } else {
+      showSnack(context,
+          '${'Errore: '.tr(context)}${s.lastConnectError ?? "—"}',
           error: true);
     }
   }
