@@ -250,7 +250,17 @@ class AppState extends ChangeNotifier {
     }
     notificationsEnabled = p.getBool('notifications') ?? true;
     final loc = p.getString('locale');
-    locale = (loc == 'en') ? AppLocale.en : AppLocale.it;
+    switch (loc) {
+      case 'en':
+        locale = AppLocale.en;
+        break;
+      case 'fr':
+        locale = AppLocale.fr;
+        break;
+      default:
+        locale = AppLocale.it;
+        break;
+    }
     selectedCamera = p.getString('selectedCamera');
     selectedMount = p.getString('selectedMount');
     selectedFocuser = p.getString('selectedFocuser');
@@ -283,7 +293,12 @@ class AppState extends ChangeNotifier {
     await p.setString('theme', themeMode.id);
     await p.setBool('night', nightMode); // retro-compat per vecchie versioni
     await p.setBool('notifications', notificationsEnabled);
-    await p.setString('locale', locale == AppLocale.en ? 'en' : 'it');
+    final localeCode = switch (locale) {
+      AppLocale.it => 'it',
+      AppLocale.en => 'en',
+      AppLocale.fr => 'fr',
+    };
+    await p.setString('locale', localeCode);
     if (selectedCamera != null) await p.setString('selectedCamera', selectedCamera!); else await p.remove('selectedCamera');
     if (selectedMount != null) await p.setString('selectedMount', selectedMount!); else await p.remove('selectedMount');
     if (selectedFocuser != null) await p.setString('selectedFocuser', selectedFocuser!); else await p.remove('selectedFocuser');

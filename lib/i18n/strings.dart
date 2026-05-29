@@ -13,20 +13,30 @@ import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 import '../state/app_state.dart';
 import 'locales/en.dart';
+import 'locales/fr.dart';
 
-enum AppLocale { it, en }
+enum AppLocale { it, en, fr }
 
 class L10n {
   /// Tabella IT -> EN. Ogni voce nuova: italiano -> inglese.
   /// Le chiavi sono CASE-SENSITIVE, inclusa la punteggiatura.
   static const Map<String, String> _en = enStrings;
 
+  /// Tabella IT -> FR. Se una chiave manca, fallback all'italiano.
+  static const Map<String, String> _fr = frStrings;
+
 
   /// Legge la stringa nella lingua corrente dello stato.
   static String t(BuildContext context, String it) {
     final loc = context.read<AppState>().locale;
-    if (loc == AppLocale.it) return it;
-    return _en[it] ?? it;
+    switch (loc) {
+      case AppLocale.it:
+        return it;
+      case AppLocale.en:
+        return _en[it] ?? it;
+      case AppLocale.fr:
+        return _fr[it] ?? it;
+    }
   }
 
   /// Variante "format" con placeholders {0}, {1}, …
