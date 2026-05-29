@@ -8,6 +8,7 @@ import '../app_version.dart';
 import '../i18n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../services/notifications.dart';
 
 /// Schermata Settings: lingua UI + tema + QR di accoppiamento + info.
 class SettingsScreen extends StatelessWidget {
@@ -50,19 +51,51 @@ class SettingsScreen extends StatelessWidget {
           _sectionLabel(context, 'Aspetto'.tr(context)),
           Container(
             decoration: _cardDeco(context),
+            child: Column(children: [
+              RadioListTile<AppThemeMode>(
+                value: AppThemeMode.pro,
+                groupValue: s.themeMode,
+                onChanged: (v) { if (v != null) s.setThemeMode(v); },
+                secondary: Icon(Icons.wb_sunny, color: T.accent(context)),
+                title: Text('Tema Pro'.tr(context)),
+                subtitle: Text('Ambra/blu, alta leggibilità'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
+              RadioListTile<AppThemeMode>(
+                value: AppThemeMode.night,
+                groupValue: s.themeMode,
+                onChanged: (v) { if (v != null) s.setThemeMode(v); },
+                secondary: Icon(Icons.nightlight_round, color: T.accent(context)),
+                title: Text('Tema Notte'.tr(context)),
+                subtitle: Text('Luce rossa, non rovina la visione notturna'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
+              RadioListTile<AppThemeMode>(
+                value: AppThemeMode.deepSpace,
+                groupValue: s.themeMode,
+                onChanged: (v) { if (v != null) s.setThemeMode(v); },
+                secondary: Icon(Icons.auto_awesome, color: T.accent(context)),
+                title: Text('Tema Deep Space'.tr(context)),
+                subtitle: Text('Nebulosa blu/viola con campo stellato'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 18),
+          _sectionLabel(context, 'Notifiche'.tr(context)),
+          Container(
+            decoration: _cardDeco(context),
             child: SwitchListTile(
-              title: Text(s.nightMode
-                  ? 'Tema Notte'.tr(context)
-                  : 'Tema Pro'.tr(context)),
-              subtitle: Text(s.nightMode
-                  ? 'Tema scuro adatto al campo'.tr(context)
-                  : 'Tema standard più chiaro'.tr(context),
+              secondary: Icon(Icons.notifications_active, color: T.accent(context)),
+              title: Text('Avvisi osservatorio'.tr(context)),
+              subtitle: Text('Sequenza finita, stella persa, errori'.tr(context),
                   style: TextStyle(color: T.muted(context), fontSize: 11)),
-              secondary: Icon(s.nightMode
-                  ? Icons.nightlight_round : Icons.wb_sunny,
-                  color: T.accent(context)),
-              value: s.nightMode,
-              onChanged: (v) => s.setNight(v),
+              value: s.notificationsEnabled,
+              onChanged: (v) {
+                s.setNotificationsEnabled(v);
+                Notifs.enabled = v;
+                if (v) Notifs.requestPermission();
+              },
             ),
           ),
           const SizedBox(height: 18),

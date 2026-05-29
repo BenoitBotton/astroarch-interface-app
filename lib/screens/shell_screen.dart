@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../api/api_client.dart';
 import '../i18n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
+import '../widgets/common.dart';
+import '../services/notification_watcher.dart';
 import 'dashboard_screen.dart';
 import 'mount_screen.dart';
 import 'capture_screen.dart';
@@ -15,6 +18,7 @@ import 'files_screen.dart';
 import 'logs_screen.dart';
 import 'live_view_screen.dart';
 import 'sky_screen.dart';
+import 'session_screen.dart';
 import 'activity_log_screen.dart';
 import 'connections_screen.dart';
 import 'setup_screen.dart';
@@ -52,10 +56,22 @@ class _ShellScreenState extends State<ShellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.watch<AppState>();
+    // Banner connessione: mostrato quando la WS di stato NON è connessa.
+    final wsDown = s.api != null && s.wsStateLabel != 'connected';
     return Scaffold(
       key: shellScaffoldKey,
       drawer: const _AppDrawer(),
-      body: _bottomScreens[_idx],
+      body: Column(children: [
+        // Watcher invisibile per le notifiche locali (v0.2.44).
+        const NotificationWatcher(),
+        if (wsDown) _ConnectionBanner(label: s.wsStateLabel),
+        Expanded(child: _bottomScreens[_idx]),
+      ]),
+      // FAB ABORT di emergenza: sempre raggiungibile da tutte le 5 schermate.
+      // Apre un bottom-sheet con gli stop critici (sequenza/guida/montatura).
+      floatingActionButton: _EmergencyStopFab(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _idx,
         onDestinationSelected: (i) => setState(() => _idx = i),
@@ -141,6 +157,10 @@ class _AppDrawer extends StatelessWidget {
               Navigator.pop(context);
               Navigator.push(context, MaterialPageRoute(builder: (_) => const AnalyzeScreen()));
             }),
+            _navTile(context, Icons.nightlight, 'Sessione'.tr(context), () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const SessionScreen()));
+            }),
             const SizedBox(height: 8),
             _section(context, 'Sistema'.tr(context)),
             _navTile(context, Icons.cloud_outlined, '${'Bridge salvate'.tr(context)} (${state.bridges.length})', () {
@@ -217,6 +237,139 @@ class _AppDrawer extends StatelessWidget {
           Text(state, style: TextStyle(color: color, fontSize: 11)),
         ],
       ),
+    );
+  }
+}
+
+/// Banner di connessione: appare in cima quando la WS di stato non è
+/// connessa (riconnessione in corso / persa). Offre un tap per forzare la
+/// riconnessione manuale delle WebSocket.
+class _ConnectionBanner extends StatelessWidget {
+  final String label;
+  const _ConnectionBanner({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final reconnecting = label == 'connecting' || label == 'reconnecting';
+    final color = reconnecting ? T.warn(context) : T.err(context);
+    final txt = reconnecting
+        ? 'Riconnessione in corso…'.tr(context)
+        : 'Connessione persa'.tr(context);
+    return Material(
+      color: color.withValues(alpha: 0.16),
+      child: InkWell(
+        onTap: () => context.read<AppState>().reconnectWs(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          child: Row(children: [
+            SizedBox(
+              width: 14, height: 14,
+              child: reconnecting
+                  ? CircularProgressIndicator(strokeWidth: 2, color: color)
+                  : Icon(Icons.cloud_off, size: 14, color: color),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(txt,
+                style: TextStyle(color: T.text(context), fontSize: 12.5))),
+            Text('RICONNETTI'.tr(context),
+                style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// FAB di STOP di emergenza, persistente in tutte le schermate della shell.
+/// Apre un bottom-sheet con gli stop critici. Niente azioni dirette senza
+/// scelta esplicita (evita stop accidentali con un tap solo).
+class _EmergencyStopFab extends StatelessWidget {
+  Future<void> _run(BuildContext c, Future<void> Function() fn, String okMsg) async {
+    final s = c.read<AppState>();
+    if (s.api == null) return;
+    try {
+      await fn();
+      if (c.mounted) showSnack(c, okMsg);
+    } on ApiException catch (e) {
+      if (c.mounted) showSnack(c, '${'Errore: '.tr(c)}${e.body}', error: true);
+    } catch (e) {
+      if (c.mounted) showSnack(c, '${'Errore: '.tr(c)}$e', error: true);
+    }
+  }
+
+  void _openSheet(BuildContext context) {
+    final s = context.read<AppState>();
+    showModalBottomSheet(context: context, backgroundColor: T.panel(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18))),
+      builder: (c) => SafeArea(child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Row(children: [
+            Icon(Icons.warning_amber_rounded, color: T.err(c)),
+            const SizedBox(width: 8),
+            Text('Stop di emergenza'.tr(c), style: TextStyle(
+                color: T.text(c), fontWeight: FontWeight.w700, fontSize: 16)),
+          ]),
+          const SizedBox(height: 4),
+          Text('Scegli cosa fermare. Azione immediata.'.tr(c),
+              style: TextStyle(color: T.muted(c), fontSize: 12)),
+          const SizedBox(height: 14),
+          _stopBtn(c, Icons.stop_circle, 'FERMA SEQUENZA'.tr(c),
+              () { Navigator.pop(c); _run(c, () => s.api!.captureEkosAbort(), 'Sequenza fermata'.tr(c)); }),
+          const SizedBox(height: 8),
+          _stopBtn(c, Icons.center_focus_strong, 'STOP GUIDA'.tr(c),
+              () { Navigator.pop(c); _run(c, () => s.api!.guideStop(), 'Guida fermata'.tr(c)); }),
+          const SizedBox(height: 8),
+          _stopBtn(c, Icons.pan_tool, 'STOP MONTATURA'.tr(c),
+              () { Navigator.pop(c); _run(c, () => s.api!.mountAbort(), 'Montatura fermata'.tr(c)); }),
+          const SizedBox(height: 8),
+          _stopBtn(c, Icons.block, 'FERMA TUTTO'.tr(c), () async {
+            Navigator.pop(c);
+            await _run(c, () => s.api!.captureEkosAbort(), '…');
+            await _run(c, () => s.api!.guideStop(), '…');
+            await _run(c, () => s.api!.mountAbort(), 'Tutto fermato'.tr(c));
+          }, danger: true),
+        ]),
+      )),
+    );
+  }
+
+  Widget _stopBtn(BuildContext c, IconData icon, String label, VoidCallback onTap,
+      {bool danger = false}) {
+    final col = danger ? T.err(c) : T.text(c);
+    return Material(
+      color: danger ? T.err(c).withValues(alpha: 0.14) : T.panel(c),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: danger ? T.err(c).withValues(alpha: 0.5) : T.line(c)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(children: [
+            Icon(icon, color: col, size: 20),
+            const SizedBox(width: 12),
+            Text(label, style: TextStyle(color: col, fontWeight: FontWeight.w700)),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.watch<AppState>();
+    if (s.api == null) return const SizedBox.shrink();
+    return FloatingActionButton.small(
+      heroTag: 'emergencyStop',
+      backgroundColor: T.err(context),
+      foregroundColor: Colors.white,
+      tooltip: 'Stop di emergenza'.tr(context),
+      onPressed: () => _openSheet(context),
+      child: const Icon(Icons.stop),
     );
   }
 }

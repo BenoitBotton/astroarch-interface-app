@@ -29,6 +29,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   // Polling separato ogni 3s di /api/capture/ekos_status.
   Timer? _ekosPoll;
   Map<String, dynamic>? _ekosCap;
+  // v0.2.44: spazio disco del Pi (cambia lentamente → poll ogni 30s).
+  Timer? _diskPoll;
+  Map<String, dynamic>? _disk;
 
   @override
   void initState() {
@@ -38,6 +41,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
     _ekosPoll = Timer.periodic(const Duration(seconds: 3), (_) => _refreshEkosCap());
     _refreshEkosCap();
+    _diskPoll = Timer.periodic(const Duration(seconds: 30), (_) => _refreshDisk());
+    _refreshDisk();
   }
 
   Future<void> _refreshEkosCap() async {
@@ -51,10 +56,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  Future<void> _refreshDisk() async {
+    final s = context.read<AppState>();
+    if (s.api == null) return;
+    try {
+      final d = await s.api!.filesDiskUsage();
+      if (mounted) setState(() => _disk = d);
+    } catch (_) {}
+  }
+
   @override
   void dispose() {
     _tick?.cancel();
     _ekosPoll?.cancel();
+    _diskPoll?.cancel();
     super.dispose();
   }
 
@@ -131,13 +146,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      // v0.2.44: in tema Deep Space mostra il campo stellato dietro al contenuto.
+      body: StarfieldBackground(
+        enabled: state.themeMode == AppThemeMode.deepSpace,
+        child: RefreshIndicator(
         onRefresh: () async {
           await state.refreshSnapshot();
         },
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 80),
           children: [
+            // v0.2.44: striscia health aggregato del sistema
+            _systemHealth(context, state),
+            const SizedBox(height: 10),
             // Pulsante master Attiva/Disattiva — clone del quadratino
             // Start/Stop Ekos del pannello Setup. Verde=tutto su, rosso=tutto giù.
             const EkosMasterToggle(),
@@ -181,6 +202,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 _domeCard(context, state),
               ],
             ),
+            const SizedBox(height: 8),
+            _diskCard(context, state),
             if (state.messages.isNotEmpty) ...[
               SectionLabel('Ultimi messaggi'.tr(context)),
               ...state.messages.reversed.take(3).map((m) => _msgRow(context, m)),
@@ -188,6 +211,109 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
+      ),
+    );
+  }
+
+  /// v0.2.44: card spazio disco del Pi + stima frame rimanenti.
+  /// Stima: free_bytes / dimensione media frame (dai file recenti, fallback 50MB).
+  /// Avvisa in giallo sotto 10GB liberi, rosso sotto 3GB.
+  Widget _diskCard(BuildContext c, AppState s) {
+    final d = _disk;
+    final free = (d?['free_bytes'] as num?)?.toDouble();
+    final total = (d?['total_bytes'] as num?)?.toDouble();
+    final imgBytes = (d?['images_dir_bytes'] as num?)?.toDouble() ?? 0;
+    final imgCount = (d?['images_files_count'] as num?)?.toInt() ?? 0;
+    const gb = 1024 * 1024 * 1024;
+
+    // dimensione media frame: da images_dir se ho file, fallback 50MB
+    final avgFrame = imgCount > 0 ? (imgBytes / imgCount) : (50.0 * 1024 * 1024);
+    final framesLeft = free != null ? (free / avgFrame).floor() : null;
+
+    final freeGb = free != null ? free / gb : null;
+    final usedFrac = (free != null && total != null && total > 0)
+        ? (1 - free / total).clamp(0.0, 1.0) : 0.0;
+
+    final Color col = freeGb == null ? T.muted(c)
+        : (freeGb < 3 ? T.err(c) : (freeGb < 10 ? T.warn(c) : T.ok(c)));
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: T.panel(c),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: T.line(c)),
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(Icons.storage, size: 15, color: T.muted(c)),
+          const SizedBox(width: 6),
+          Text('DISCO RPi'.tr(c), style: TextStyle(
+              color: T.muted(c), fontSize: 10.5, letterSpacing: 1.2)),
+          const Spacer(),
+          Text(freeGb == null ? '—' : '${freeGb.toStringAsFixed(1)} GB ${'liberi'.tr(c)}',
+              style: TextStyle(color: col, fontSize: 13, fontWeight: FontWeight.w700)),
+        ]),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(
+            value: usedFrac, minHeight: 6,
+            backgroundColor: T.line(c), color: col,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(framesLeft == null
+            ? 'spazio disco non disponibile'.tr(c)
+            : '~$framesLeft ${'frame rimanenti'.tr(c)} (${imgCount} ${'fatti'.tr(c)})',
+            style: TextStyle(color: T.muted(c), fontSize: 11)),
+      ]),
+    );
+  }
+
+  /// v0.2.44: striscia di health aggregato — un colpo d'occhio sullo stato
+  /// del sistema (INDI, PHD2, frame stream, devices). Verde = tutto ok,
+  /// giallo = avvisi. Aggrega solo dati già presenti in AppState (nessuna
+  /// chiamata extra). Il disco viene aggiunto in fase C.
+  Widget _systemHealth(BuildContext c, AppState s) {
+    final checks = <(String, bool, bool)>[ // (label, ok, isWarn-not-err)
+      ('INDI', s.indiConn == 'connected', false),
+      ('PHD2', s.phd2Conn == 'connected', true),
+      ('Stream', s.wsFramesLabel == 'connected', true),
+      ('Device', s.devices.isNotEmpty, false),
+    ];
+    final problems = checks.where((e) => !e.$2).toList();
+    final allOk = problems.isEmpty;
+    final hasErr = problems.any((e) => !e.$3); // problema "duro" (INDI/Device)
+    final col = allOk ? T.ok(c) : (hasErr ? T.err(c) : T.warn(c));
+    final title = allOk
+        ? 'Sistema operativo'.tr(c)
+        : '${problems.length} ${problems.length == 1 ? "avviso".tr(c) : "avvisi".tr(c)}';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: col.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: col.withValues(alpha: 0.4)),
+      ),
+      child: Row(children: [
+        Icon(allOk ? Icons.check_circle : Icons.warning_amber_rounded,
+            color: col, size: 18),
+        const SizedBox(width: 8),
+        Text(title, style: TextStyle(color: col, fontWeight: FontWeight.w700, fontSize: 13)),
+        const Spacer(),
+        // mini-indicatori per ciascun check
+        ...checks.map((e) => Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: Row(children: [
+            Container(width: 7, height: 7, decoration: BoxDecoration(
+                color: e.$2 ? T.ok(c) : (e.$3 ? T.warn(c) : T.err(c)),
+                shape: BoxShape.circle)),
+            const SizedBox(width: 3),
+            Text(e.$1, style: TextStyle(color: T.muted(c), fontSize: 10)),
+          ]),
+        )),
+      ]),
     );
   }
 

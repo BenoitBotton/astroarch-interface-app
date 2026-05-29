@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
 import '../api/ws_client.dart';
 import '../i18n/strings.dart';
+import '../theme/app_theme.dart';
 import 'bridge_connection.dart';
 import 'capture_job.dart';
 
@@ -54,7 +55,14 @@ class AppState extends ChangeNotifier {
     if (b != null) { b.useHttps = v; savePrefs(); }
   }
 
-  bool nightMode = false;
+  // Tema UI (v0.2.44): pro / night / deepSpace. Sostituisce il vecchio bool
+  // nightMode, che resta come getter/setter di COMPATIBILITÀ per il codice
+  // esistente (login_screen.setNight, badge dashboard, ecc.).
+  AppThemeMode themeMode = AppThemeMode.pro;
+  bool get nightMode => themeMode == AppThemeMode.night;
+  set nightMode(bool v) => themeMode = v ? AppThemeMode.night : AppThemeMode.pro;
+  // v0.2.44: notifiche locali on/off (persistente).
+  bool notificationsEnabled = true;
   // Lingua UI — IT è default ("Zarletti-Osservatorio Jupiter" è italiano).
   // Cambiabile da Settings; persistente via SharedPreferences (chiave 'locale').
   AppLocale locale = AppLocale.it;
@@ -179,6 +187,8 @@ class AppState extends ChangeNotifier {
   String connectionStateLabel = 'disconnected';
   String wsStateLabel = 'disconnected';
   String wsFramesLabel = 'disconnected';
+  // v0.2.44: istante di inizio sessione (per durata in schermata Sessione).
+  DateTime? connectedAt;
   ApiClient? api;
   WsClient? _wsState;
   WsClient? _wsFrames;
@@ -229,7 +239,16 @@ class AppState extends ChangeNotifier {
         await _saveBridgesList(p);
       }
     }
-    nightMode = p.getBool('night') ?? false;
+    // Tema: nuova chiave 'theme' (pro/night/deep_space). Retro-compat: se manca
+    // ma esiste la vecchia 'night'==true, mappa su night.
+    final themeId = p.getString('theme');
+    if (themeId != null) {
+      themeMode = AppThemeModeX.fromId(themeId);
+    } else {
+      themeMode = (p.getBool('night') ?? false)
+          ? AppThemeMode.night : AppThemeMode.pro;
+    }
+    notificationsEnabled = p.getBool('notifications') ?? true;
     final loc = p.getString('locale');
     locale = (loc == 'en') ? AppLocale.en : AppLocale.it;
     selectedCamera = p.getString('selectedCamera');
@@ -261,7 +280,9 @@ class AppState extends ChangeNotifier {
   Future<void> savePrefs() async {
     final p = await SharedPreferences.getInstance();
     await _saveBridgesList(p);
-    await p.setBool('night', nightMode);
+    await p.setString('theme', themeMode.id);
+    await p.setBool('night', nightMode); // retro-compat per vecchie versioni
+    await p.setBool('notifications', notificationsEnabled);
     await p.setString('locale', locale == AppLocale.en ? 'en' : 'it');
     if (selectedCamera != null) await p.setString('selectedCamera', selectedCamera!); else await p.remove('selectedCamera');
     if (selectedMount != null) await p.setString('selectedMount', selectedMount!); else await p.remove('selectedMount');
@@ -474,6 +495,20 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// v0.2.44: imposta il tema (pro / night / deepSpace).
+  void setThemeMode(AppThemeMode m) {
+    themeMode = m;
+    savePrefs();
+    notifyListeners();
+  }
+
+  /// v0.2.44: abilita/disabilita le notifiche locali.
+  void setNotificationsEnabled(bool v) {
+    notificationsEnabled = v;
+    savePrefs();
+    notifyListeners();
+  }
+
   void setLocale(AppLocale l) {
     locale = l;
     savePrefs();
@@ -541,6 +576,7 @@ class AppState extends ChangeNotifier {
 
     // Solo ora promuoviamo il client a "ufficiale"
     api = probe;
+    connectedAt = DateTime.now();
     connectionStateLabel = 'connected';
     _ingestSnapshot(snap);
     notifyListeners();
@@ -579,6 +615,18 @@ class AppState extends ChangeNotifier {
     await _wsFrames!.start();
 
     return true;
+  }
+
+  /// v0.2.44: forza la riconnessione di entrambe le WebSocket senza
+  /// rifare login/snapshot. Usato dal banner di connessione quando una
+  /// WS resta bloccata (es. dopo un cambio rete Tailscale).
+  Future<void> reconnectWs() async {
+    if (api == null) return;
+    try { await _wsState?.stop(); } catch (_) {}
+    try { await _wsFrames?.stop(); } catch (_) {}
+    await _wsState?.start();
+    await _wsFrames?.start();
+    notifyListeners();
   }
 
   Future<void> _refreshCameraRoles() async {

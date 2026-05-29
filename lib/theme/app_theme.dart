@@ -1,6 +1,26 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
-/// Theme dell'app - Pro (ambra) o Notte (rosso) per non disturbare l'adattamento al buio.
+/// I tre temi dell'app:
+///  - pro       : ambra/blu, default operativo, alta leggibilità
+///  - night     : red-light, NON disturba l'adattamento al buio degli occhi
+///  - deepSpace : blu/viola nebulosa, con campo stellato a tema astronomia
+enum AppThemeMode { pro, night, deepSpace }
+
+extension AppThemeModeX on AppThemeMode {
+  String get id => switch (this) {
+        AppThemeMode.pro => 'pro',
+        AppThemeMode.night => 'night',
+        AppThemeMode.deepSpace => 'deep_space',
+      };
+  static AppThemeMode fromId(String? s) => switch (s) {
+        'night' => AppThemeMode.night,
+        'deep_space' => AppThemeMode.deepSpace,
+        _ => AppThemeMode.pro,
+      };
+}
+
+/// Theme dell'app - Pro (ambra), Notte (rosso), Deep Space (nebulosa).
 class AppTheme {
   // Colori Pro
   static const Color proBg = Color(0xFF0A0D12);
@@ -27,6 +47,25 @@ class AppTheme {
   static const Color nightOk = Color(0xFFFF8A8A);
   static const Color nightErr = Color(0xFFFF5B5B);
 
+  // Colori Deep Space (nebulosa: blu profondo, accenti viola/ciano)
+  static const Color dsBg = Color(0xFF05060F);
+  static const Color dsPanel = Color(0xFF0C1024);
+  static const Color dsPanel2 = Color(0xFF141A38);
+  static const Color dsLine = Color(0xFF26305C);
+  static const Color dsText = Color(0xFFE8ECFF);
+  static const Color dsMuted = Color(0xFF8A93C0);
+  static const Color dsAccent = Color(0xFF8B7CFF);   // viola nebulosa
+  static const Color dsAccent2 = Color(0xFF42E8E0);  // ciano
+  static const Color dsOk = Color(0xFF3EE0A0);
+  static const Color dsErr = Color(0xFFFF5B7E);
+
+  /// Ritorna il ThemeData per il modo richiesto.
+  static ThemeData forMode(AppThemeMode m) => switch (m) {
+        AppThemeMode.night => buildNight(),
+        AppThemeMode.deepSpace => buildDeepSpace(),
+        AppThemeMode.pro => buildPro(),
+      };
+
   static ThemeData buildPro() => _build(
         bg: proBg, panel: proPanel, panel2: proPanel2, line: proLine,
         text: proText, muted: proMuted, accent: proAccent, accent2: proAccent2,
@@ -37,6 +76,12 @@ class AppTheme {
         bg: nightBg, panel: nightPanel, panel2: nightPanel2, line: nightLine,
         text: nightText, muted: nightMuted, accent: nightAccent, accent2: nightAccent2,
         ok: nightOk, err: nightErr,
+      );
+
+  static ThemeData buildDeepSpace() => _build(
+        bg: dsBg, panel: dsPanel, panel2: dsPanel2, line: dsLine,
+        text: dsText, muted: dsMuted, accent: dsAccent, accent2: dsAccent2,
+        ok: dsOk, err: dsErr,
       );
 
   static ThemeData _build({
@@ -135,6 +180,74 @@ class AppTheme {
       ),
     );
   }
+}
+
+/// Sfondo campo stellato per il tema Deep Space.
+/// Dipinge stelle + un alone di nebulosa molto sottili dietro al contenuto.
+/// Deterministico (seed fisso) → non "sfarfalla" ad ogni rebuild.
+/// In tema non-deepSpace è completamente trasparente (no-op visivo).
+class StarfieldBackground extends StatelessWidget {
+  final Widget child;
+  final bool enabled;
+  const StarfieldBackground({super.key, required this.child, this.enabled = true});
+
+  @override
+  Widget build(BuildContext context) {
+    if (!enabled) return child;
+    return Stack(children: [
+      Positioned.fill(
+        child: IgnorePointer(
+          child: CustomPaint(painter: _StarfieldPainter()),
+        ),
+      ),
+      child,
+    ]);
+  }
+}
+
+class _StarfieldPainter extends CustomPainter {
+  // seed fisso → posizioni stabili tra repaint
+  static final List<_Star> _stars = _gen();
+  static List<_Star> _gen() {
+    final r = math.Random(20260527);
+    return List.generate(140, (_) => _Star(
+      r.nextDouble(), r.nextDouble(),
+      r.nextDouble() * 1.3 + 0.3,
+      r.nextDouble() * 0.6 + 0.2,
+    ));
+  }
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Aloni di nebulosa (2 macchie morbide viola/ciano molto tenui)
+    final neb1 = Paint()
+      ..shader = RadialGradient(colors: [
+        const Color(0x228B7CFF), const Color(0x00000000),
+      ]).createShader(Rect.fromCircle(
+          center: Offset(size.width * 0.25, size.height * 0.28),
+          radius: size.width * 0.5));
+    canvas.drawRect(Offset.zero & size, neb1);
+    final neb2 = Paint()
+      ..shader = RadialGradient(colors: [
+        const Color(0x1842E8E0), const Color(0x00000000),
+      ]).createShader(Rect.fromCircle(
+          center: Offset(size.width * 0.8, size.height * 0.7),
+          radius: size.width * 0.45));
+    canvas.drawRect(Offset.zero & size, neb2);
+    // Stelle
+    for (final s in _stars) {
+      final p = Paint()..color = Colors.white.withValues(alpha: s.alpha);
+      canvas.drawCircle(Offset(s.x * size.width, s.y * size.height), s.r, p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _StarfieldPainter old) => false;
+}
+
+class _Star {
+  final double x, y, r, alpha;
+  const _Star(this.x, this.y, this.r, this.alpha);
 }
 
 /// Token semantici accessibili in tutta l'app.
