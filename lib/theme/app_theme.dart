@@ -384,73 +384,107 @@ class _StarfieldPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, p2);
   }
 
+  /// Starfield con PARALLAX: le stelle più grandi (vicine) driftano più
+  /// veloci di quelle piccole (lontane) → profondità. Le grandi hanno anche
+  /// un leggero glow.
   void _paintStars(Canvas canvas, Size size, double driftX) {
     for (final s in _stars) {
-      final x = ((s.x + driftX) % 1.0) * size.width;
-      final p = Paint()..color = Colors.white.withValues(alpha: s.alpha);
-      canvas.drawCircle(Offset(x, s.y * size.height), s.r, p);
+      // parallax: drift proporzionale alla dimensione (profondità)
+      final depth = (s.r - 0.3) / 1.3; // 0..1
+      final x = ((s.x + driftX * (0.3 + depth)) % 1.0) * size.width;
+      final y = s.y * size.height;
+      if (s.r > 1.0) {
+        // glow per le stelle vicine
+        canvas.drawCircle(Offset(x, y), s.r * 2.2, Paint()
+          ..color = Colors.white.withValues(alpha: s.alpha * 0.15)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
+      }
+      canvas.drawCircle(Offset(x, y), s.r,
+          Paint()..color = Colors.white.withValues(alpha: s.alpha));
     }
   }
 
-  /// Disco di accrescimento "Gargantua" (originale, ispirato a Interstellar):
-  /// sfera nera + anello luminoso + arco di lensing gravitazionale sopra.
-  /// Piccolo, in alto a destra, con rotazione lenta dell'anello.
+  /// Disco di accrescimento "Gargantua" foto-realistico (originale, ispirato
+  /// a Interstellar): orizzonte degli eventi nero + photon ring, disco con
+  /// DOPPLER BEAMING (un lato molto più luminoso), LENSING gravitazionale
+  /// (anello verticale che passa sopra e sotto), glow esterno. Rotazione lenta.
   void _paintGargantua(Canvas canvas, Size size, double t) {
-    final c = Offset(size.width * 0.82, size.height * 0.16);
-    final r = size.width * 0.13;
+    final c = Offset(size.width * 0.80, size.height * 0.17);
+    final r = size.width * 0.14;
     canvas.save();
-    // anello di accrescimento (ellisse schiacciata) con gradient ambra
-    final ringRect = Rect.fromCenter(center: c, width: r * 3.4, height: r * 0.9);
-    final ring = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = r * 0.28
-      ..shader = SweepGradient(
-        transform: GradientRotation(t * 2 * math.pi),
+    canvas.translate(c.dx, c.dy);
+
+    // glow esterno morbido
+    canvas.drawCircle(Offset.zero, r * 2.6, Paint()
+      ..shader = RadialGradient(colors: const [
+        Color(0x33FFD89A), Color(0x00000000),
+      ]).createShader(Rect.fromCircle(center: Offset.zero, radius: r * 2.6)));
+
+    // LENSING: anello verticale (l'immagine del disco "dietro" curvata sopra
+    // e sotto la sfera) — la firma visiva di Gargantua.
+    final lensRect = Rect.fromCenter(center: Offset.zero, width: r * 2.5, height: r * 3.6);
+    canvas.drawOval(lensRect, Paint()
+      ..style = PaintingStyle.stroke ..strokeWidth = r * 0.16
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3)
+      ..shader = SweepGradient(transform: GradientRotation(t * 2 * math.pi),
+        colors: const [Color(0x00FFE6B0), Color(0x66FFE6B0), Color(0x00FFE6B0),
+                       Color(0x66FFE6B0), Color(0x00FFE6B0)],
+      ).createShader(lensRect));
+
+    // DISCO DI ACCRESCIMENTO (ellisse schiacciata) con doppler beaming:
+    // lato sinistro (in avvicinamento) molto più luminoso del destro.
+    final diskRect = Rect.fromCenter(center: Offset.zero, width: r * 3.6, height: r * 1.0);
+    canvas.drawOval(diskRect, Paint()
+      ..style = PaintingStyle.stroke ..strokeWidth = r * 0.34
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5)
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft, end: Alignment.centerRight,
         colors: const [
-          Color(0x00E0A85C), Color(0x88FFC878), Color(0xCCFFE0A0),
-          Color(0x88FFC878), Color(0x00E0A85C),
+          Color(0xFFFFF4D0), Color(0xFFFFD080), Color(0xFFC87830),
+          Color(0xFF7A4818), Color(0xFF3A2410),
         ],
-      ).createShader(ringRect);
-    canvas.drawOval(ringRect, ring);
-    // arco di lensing sopra (la "corona" verticale tipica)
-    final lens = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = r * 0.18
-      ..shader = LinearGradient(colors: const [
-        Color(0x00FFC878), Color(0x99FFE0A0), Color(0x00FFC878),
-      ]).createShader(Rect.fromCircle(center: c, radius: r * 1.3));
-    canvas.drawArc(Rect.fromCircle(center: c, radius: r * 1.25),
-        math.pi, math.pi, false, lens);
+        stops: const [0.0, 0.28, 0.55, 0.8, 1.0],
+      ).createShader(diskRect));
+
     // sfera nera (orizzonte degli eventi)
-    canvas.drawCircle(c, r, Paint()..color = const Color(0xFF000000));
-    canvas.drawCircle(c, r, Paint()
-      ..style = PaintingStyle.stroke ..strokeWidth = 1
-      ..color = const Color(0x33FFE0A0));
+    canvas.drawCircle(Offset.zero, r, Paint()..color = const Color(0xFF000000));
+    // photon ring sottile e luminoso attorno all'orizzonte
+    canvas.drawCircle(Offset.zero, r * 1.02, Paint()
+      ..style = PaintingStyle.stroke ..strokeWidth = r * 0.05
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5)
+      ..color = const Color(0xCCFFE6B0));
     canvas.restore();
   }
 
-  /// Silhouette di una starship (forma ORIGINALE generica: scafo a disco +
-  /// due gondole) che scorre lentamente in orizzontale. Non riproduce
-  /// navi protette da copyright.
+  /// Starship (forma ORIGINALE: scafo a disco + collo + due gondole con
+  /// bussard glow rosso e scia warp azzurra) che scorre. Non riproduce navi
+  /// protette da copyright — è una nave generica stilizzata.
   void _paintStarship(Canvas canvas, Size size, double t) {
-    final x = (t * 1.4 - 0.2) * size.width; // entra ed esce dai bordi
-    final y = size.height * 0.20;
-    final s = size.width * 0.05; // scala
-    final col = const Color(0x44FF9C00);
-    final p = Paint()..color = col;
+    final x = (t * 1.4 - 0.2) * size.width;
+    final y = size.height * 0.22;
+    final s = size.width * 0.055;
     canvas.save();
     canvas.translate(x, y);
-    // scafo a disco (ellisse)
-    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: s * 2.2, height: s * 0.7), p);
-    // corpo posteriore
+    // scia warp (azzurra) dietro
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(-s * 2.5, s * 1.0), width: s * 4, height: s * 0.5),
+      Paint()..shader = LinearGradient(colors: const [
+        Color(0x000088FF), Color(0x553399FF),
+      ]).createShader(Rect.fromCenter(center: Offset(-s * 2.5, s * 1.0), width: s * 4, height: s * 0.5)));
+    final hull = Paint()..color = const Color(0x66B0C4DE);
+    // scafo a disco
+    canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: s * 2.4, height: s * 0.7), hull);
+    // collo + corpo
     canvas.drawRRect(RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(0, s * 0.55), width: s * 0.7, height: s * 0.9),
-        Radius.circular(s * 0.2)), p);
-    // due gondole
-    for (final dx in [-s * 0.8, s * 0.8]) {
+        Rect.fromCenter(center: Offset(0, s * 0.6), width: s * 0.6, height: s * 1.0),
+        Radius.circular(s * 0.2)), hull);
+    // due gondole con punta rossa (bussard)
+    for (final dx in [-s * 0.85, s * 0.85]) {
       canvas.drawRRect(RRect.fromRectAndRadius(
-          Rect.fromCenter(center: Offset(dx, s * 1.0), width: s * 0.3, height: s * 1.1),
-          Radius.circular(s * 0.15)), p);
+          Rect.fromCenter(center: Offset(dx, s * 1.05), width: s * 0.32, height: s * 1.2),
+          Radius.circular(s * 0.16)), hull);
+      canvas.drawCircle(Offset(dx, s * 0.5), s * 0.16,
+          Paint()..color = const Color(0x99FF5533));
     }
     canvas.restore();
   }
