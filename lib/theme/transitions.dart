@@ -17,6 +17,7 @@ class ThemedTransitions {
   static Duration durationFor(AppThemeMode m) => switch (m) {
         AppThemeMode.starTrek => const Duration(milliseconds: 480),
         AppThemeMode.interstellar => const Duration(milliseconds: 520),
+        AppThemeMode.osservatorioJupiter => const Duration(milliseconds: 500),
         AppThemeMode.deepSpace => const Duration(milliseconds: 300),
         _ => Duration.zero, // pro/night: istantaneo
       };
@@ -29,11 +30,27 @@ class ThemedTransitions {
         return _transporter(child, animation);
       case AppThemeMode.interstellar:
         return _blackHole(child, animation);
+      case AppThemeMode.osservatorioJupiter:
+        return _deepSkyZoom(child, animation);
       case AppThemeMode.deepSpace:
         return FadeTransition(opacity: animation, child: child);
       default:
         return child; // nessun effetto
     }
+  }
+
+  /// Deep-sky zoom: la nuova schermata emerge "tuffandosi" verso il soggetto —
+  /// parte leggermente più piccola e cresce fino a posizione, con fade (dolly-in
+  /// astronomico). L'uscente (reverse) si rimpicciolisce verso il profondo.
+  static Widget _deepSkyZoom(Widget child, Animation<double> a) {
+    final curved = CurvedAnimation(parent: a, curve: Curves.easeOutCubic);
+    return FadeTransition(
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween(begin: 0.82, end: 1.0).animate(curved),
+        child: child,
+      ),
+    );
   }
 
   /// Teletrasporto Star Trek: fade + maschera a banda luminosa verticale

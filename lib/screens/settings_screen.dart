@@ -131,6 +131,16 @@ class SettingsScreen extends StatelessWidget {
                 subtitle: Text('Console LCARS · animato'.tr(context),
                     style: TextStyle(color: T.muted(context), fontSize: 11)),
               ),
+              const Divider(height: 1),
+              RadioListTile<AppThemeMode>(
+                value: AppThemeMode.osservatorioJupiter,
+                groupValue: s.themeMode,
+                onChanged: (v) { if (v != null) s.setThemeMode(v); },
+                secondary: Icon(Icons.photo_camera_back, color: T.accent(context)),
+                title: const Text('Osservatorio Jupiter'),
+                subtitle: Text('Foto reale (Iris NGC 7023) · deep-sky zoom'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
               // Disclaimer batteria + copyright (richiesti)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),

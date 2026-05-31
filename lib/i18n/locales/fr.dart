@@ -63,6 +63,7 @@ const Map<String, String> frStrings = {
   'Sequenza finita, stella persa, errori': 'Sequence completee, etoile perdue, erreurs',
   'Cinematografico blu-ghiaccio · animato': 'Cinematic ice-blue · anime',
   'Console LCARS · animato': 'LCARS console · anime',
+  'Foto reale (Iris NGC 7023) · deep-sky zoom': 'Photo réelle (Iris NGC 7023) · deep-sky zoom',
   'I temi animati (Interstellar, Star Trek) consumano più batteria e CPU.':
       'Themes animes (Interstellar, Star Trek) utilisent plus de resources.',
   'Interstellar™ e Star Trek™ sono marchi dei rispettivi proprietari. Temi a tema realizzati da fan, non ufficiali e non affiliati. Font Google Fonts (Open Font License).':

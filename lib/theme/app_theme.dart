@@ -8,8 +8,11 @@ import 'package:google_fonts/google_fonts.dart';
 ///  - deepSpace    : blu/viola nebulosa, con campo stellato a tema astronomia
 ///  - interstellar : sobrio cinematografico, blu-ghiaccio, font Exo 2, animato*
 ///  - starTrek     : console LCARS, pannelli arancio/viola, font Oswald, animato*
+///  - osservatorioJupiter : sfondo = foto astronomica reale dell'utente
+///                  (Iris NGC 7023), palette derivata dalla foto, transizione
+///                  deep-sky zoom
 /// (* temi "scenici": animazioni → maggior consumo batteria/CPU)
-enum AppThemeMode { pro, night, deepSpace, interstellar, starTrek }
+enum AppThemeMode { pro, night, deepSpace, interstellar, starTrek, osservatorioJupiter }
 
 extension AppThemeModeX on AppThemeMode {
   String get id => switch (this) {
@@ -18,20 +21,26 @@ extension AppThemeModeX on AppThemeMode {
         AppThemeMode.deepSpace => 'deep_space',
         AppThemeMode.interstellar => 'interstellar',
         AppThemeMode.starTrek => 'star_trek',
+        AppThemeMode.osservatorioJupiter => 'osservatorio_jupiter',
       };
   static AppThemeMode fromId(String? s) => switch (s) {
         'night' => AppThemeMode.night,
         'deep_space' => AppThemeMode.deepSpace,
         'interstellar' => AppThemeMode.interstellar,
         'star_trek' => AppThemeMode.starTrek,
+        'osservatorio_jupiter' => AppThemeMode.osservatorioJupiter,
         _ => AppThemeMode.pro,
       };
-  /// Temi "scenici" con animazioni (consumo maggiore).
+  /// Temi "scenici" (sfondo a tema + transizioni).
   bool get isScenic => this == AppThemeMode.deepSpace ||
-      this == AppThemeMode.interstellar || this == AppThemeMode.starTrek;
-  /// Animazioni marcate (interstellar/starTrek). DeepSpace è statico.
+      this == AppThemeMode.interstellar || this == AppThemeMode.starTrek ||
+      this == AppThemeMode.osservatorioJupiter;
+  /// Animazioni di sfondo marcate (interstellar/starTrek). DeepSpace e
+  /// osservatorioJupiter hanno sfondo statico (la foto non si anima).
   bool get isAnimated => this == AppThemeMode.interstellar ||
       this == AppThemeMode.starTrek;
+  /// Tema con foto reale di sfondo (asset).
+  bool get hasPhotoBackground => this == AppThemeMode.osservatorioJupiter;
 }
 
 /// Theme dell'app - Pro (ambra), Notte (rosso), Deep Space (nebulosa).
@@ -97,14 +106,37 @@ class AppTheme {
   static const Color stOk = Color(0xFFCC99CC);
   static const Color stErr = Color(0xFFFF5555);
 
+  // Colori Osservatorio Jupiter (derivati dalla foto Iris NGC 7023:
+  // nebulosa a riflessione → ciano/azzurro #3CAAB8 estratto dalla foto).
+  static const Color ojBg = Color(0xFF04060C);
+  static const Color ojPanel = Color(0xCC0A0E18);   // semi-trasparente sulla foto
+  static const Color ojPanel2 = Color(0xDD121826);
+  static const Color ojLine = Color(0xFF223247);
+  static const Color ojText = Color(0xFFDCE8F2);
+  static const Color ojMuted = Color(0xFF7286A0);
+  static const Color ojAccent = Color(0xFF3CAAB8);   // ciano Iris (dalla foto)
+  static const Color ojAccent2 = Color(0xFF8FC4E8);  // azzurro stellare
+  static const Color ojOk = Color(0xFF5FC9B0);
+  static const Color ojErr = Color(0xFFE06B6B);
+
+  /// Path dell'asset foto di sfondo del tema Osservatorio Jupiter.
+  static const String ojPhotoAsset = 'assets/themes/osservatorio_jupiter.jpg';
+
   /// Ritorna il ThemeData per il modo richiesto.
   static ThemeData forMode(AppThemeMode m) => switch (m) {
         AppThemeMode.night => buildNight(),
         AppThemeMode.deepSpace => buildDeepSpace(),
         AppThemeMode.interstellar => buildInterstellar(),
         AppThemeMode.starTrek => buildStarTrek(),
+        AppThemeMode.osservatorioJupiter => buildOsservatorioJupiter(),
         AppThemeMode.pro => buildPro(),
       };
+
+  static ThemeData buildOsservatorioJupiter() => _build(
+        bg: ojBg, panel: ojPanel, panel2: ojPanel2, line: ojLine,
+        text: ojText, muted: ojMuted, accent: ojAccent, accent2: ojAccent2,
+        ok: ojOk, err: ojErr,
+      );
 
   static ThemeData buildPro() => _build(
         bg: proBg, panel: proPanel, panel2: proPanel2, line: proLine,
@@ -304,6 +336,21 @@ class _StarfieldBackgroundState extends State<StarfieldBackground>
   @override
   Widget build(BuildContext context) {
     if (!widget.mode.isScenic) return widget.child;
+    // Tema con foto reale: sfondo = asset + scrim scuro per leggibilità.
+    if (widget.mode.hasPhotoBackground) {
+      return Stack(fit: StackFit.expand, children: [
+        Image.asset(AppTheme.ojPhotoAsset, fit: BoxFit.cover,
+            // fallback se l'asset mancasse: niente crash, solo nero
+            errorBuilder: (_, __, ___) => const ColoredBox(color: AppTheme.ojBg)),
+        // scrim graduato: più scuro in basso (dove c'è più UI/testo)
+        const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
+          begin: Alignment.topCenter, end: Alignment.bottomCenter,
+          colors: [Color(0x99000000), Color(0xCC04060C), Color(0xEE04060C)],
+          stops: [0.0, 0.5, 1.0],
+        ))),
+        widget.child,
+      ]);
+    }
     if (_ctrl == null) {
       // statico (deepSpace)
       return Stack(children: [
