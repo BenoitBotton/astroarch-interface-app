@@ -63,7 +63,8 @@ const Map<String, String> enStrings = {
     'Sequenza finita, stella persa, errori': 'Sequence done, star lost, errors',
     'Cinematografico blu-ghiaccio · animato': 'Cinematic ice-blue · animated',
     'Console LCARS · animato': 'LCARS console · animated',
-    'Foto reale (Iris NGC 7023) · deep-sky zoom': 'Real photo (Iris NGC 7023) · deep-sky zoom',
+    'Foto reale (Iris NGC 7023) · font 13 Misa · deep-sky zoom': 'Real photo (Iris NGC 7023) · 13 Misa font · deep-sky zoom',
+    'Font "13 Misa" © Zane Townsend (Unrender) — uso consentito, ridistribuito con la licenza originale.': 'Font "13 Misa" © Zane Townsend (Unrender) — use permitted, redistributed with its original license.',
     'I temi animati (Interstellar, Star Trek) consumano più batteria e CPU.':
         'Animated themes (Interstellar, Star Trek) use more battery and CPU.',
     'Interstellar™ e Star Trek™ sono marchi dei rispettivi proprietari. Temi a tema realizzati da fan, non ufficiali e non affiliati. Font Google Fonts (Open Font License).':

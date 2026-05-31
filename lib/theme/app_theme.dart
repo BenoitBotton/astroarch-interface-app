@@ -140,6 +140,7 @@ class AppTheme {
         // MaterialApp builder) traspare in OGNI schermata. Le card sono
         // semi-trasparenti (ojPanel = 0xCC…) così la foto si intravede sotto.
         scaffoldColor: const Color(0x00000000),
+        fontBuilder: _osservatorioFont, // font "13 Misa" sui titoli
       );
 
   static ThemeData buildPro() => _build(
@@ -168,6 +169,25 @@ class AppTheme {
       GoogleFonts.exo2TextTheme(base);
   static TextTheme _starTrekFont(TextTheme base) =>
       GoogleFonts.antonioTextTheme(base);
+
+  /// Font "13 Misa" (Zane Townsend / Unrender) per il tema Osservatorio Jupiter.
+  /// È un font DISPLAY decorativo (lettere con orbite) → applicato SOLO a
+  /// titoli/headline/display per dare carattere senza rovinare la leggibilità
+  /// di numeri e testo (RA/Dec, coordinate, liste restano col font di sistema).
+  static TextTheme _osservatorioFont(TextTheme base) {
+    const fam = 'Misa13';
+    TextStyle? m(TextStyle? s) => s?.copyWith(fontFamily: fam, letterSpacing: 1.0);
+    return base.copyWith(
+      displayLarge: m(base.displayLarge),
+      displayMedium: m(base.displayMedium),
+      displaySmall: m(base.displaySmall),
+      headlineLarge: m(base.headlineLarge),
+      headlineMedium: m(base.headlineMedium),
+      headlineSmall: m(base.headlineSmall),
+      titleLarge: m(base.titleLarge),
+      titleMedium: m(base.titleMedium),
+    );
+  }
 
   static ThemeData buildInterstellar() => _build(
         bg: isBg, panel: isPanel, panel2: isPanel2, line: isLine,

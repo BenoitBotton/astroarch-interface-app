@@ -138,8 +138,14 @@ class SettingsScreen extends StatelessWidget {
                 onChanged: (v) { if (v != null) s.setThemeMode(v); },
                 secondary: Icon(Icons.photo_camera_back, color: T.accent(context)),
                 title: const Text('Osservatorio Jupiter'),
-                subtitle: Text('Foto reale (Iris NGC 7023) · deep-sky zoom'.tr(context),
+                subtitle: Text('Foto reale (Iris NGC 7023) · font 13 Misa · deep-sky zoom'.tr(context),
                     style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: Text(
+                  'Font "13 Misa" © Zane Townsend (Unrender) — uso consentito, ridistribuito con la licenza originale.'.tr(context),
+                  style: TextStyle(color: T.muted(context), fontSize: 9.5)),
               ),
               // Disclaimer batteria + copyright (richiesti)
               Padding(
