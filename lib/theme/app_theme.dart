@@ -140,7 +140,8 @@ class AppTheme {
         // MaterialApp builder) traspare in OGNI schermata. Le card sono
         // semi-trasparenti (ojPanel = 0xCC…) così la foto si intravede sotto.
         scaffoldColor: const Color(0x00000000),
-        fontBuilder: _osservatorioFont, // font "13 Misa" sui titoli
+        fontBuilder: _osservatorioFont, // headline/display
+        titleFont: 'Misa13',            // titoli AppBar di ogni schermata
       );
 
   static ThemeData buildPro() => _build(
@@ -171,12 +172,23 @@ class AppTheme {
       GoogleFonts.antonioTextTheme(base);
 
   /// Font "13 Misa" (Zane Townsend / Unrender) per il tema Osservatorio Jupiter.
-  /// v0.2.52: applicato a TUTTO il textTheme (richiesto dall'utente: voleva
-  /// vederlo ovunque, non solo sui titoli). È un font display decorativo con
-  /// orbite → look sci-fi marcato su tutta l'app in questo tema specifico.
-  /// Gli altri 5 temi usano i loro font leggibili per l'uso operativo.
-  static TextTheme _osservatorioFont(TextTheme base) =>
-      base.apply(fontFamily: 'Misa13');
+  /// v0.2.53: applicato SOLO ai TITOLI (richiesto dall'utente). È un font
+  /// display decorativo con orbite → sui numeri/testo sarebbe illeggibile.
+  /// I titoli delle schermate (AppBar) usano il font via `titleFont` in
+  /// _build; qui copriamo anche gli headline/display semantici. Body e numeri
+  /// restano col font di sistema (leggibile).
+  static TextTheme _osservatorioFont(TextTheme base) {
+    const fam = 'Misa13';
+    TextStyle? m(TextStyle? s) => s?.copyWith(fontFamily: fam, letterSpacing: 1.2);
+    return base.copyWith(
+      displayLarge: m(base.displayLarge),
+      displayMedium: m(base.displayMedium),
+      displaySmall: m(base.displaySmall),
+      headlineLarge: m(base.headlineLarge),
+      headlineMedium: m(base.headlineMedium),
+      headlineSmall: m(base.headlineSmall),
+    );
+  }
 
   static ThemeData buildInterstellar() => _build(
         bg: isBg, panel: isPanel, panel2: isPanel2, line: isLine,
@@ -199,6 +211,7 @@ class AppTheme {
     TextTheme Function(TextTheme)? fontBuilder,
     double cardRadius = 14,
     Color? scaffoldColor,
+    String? titleFont,
   }) {
     final base = ThemeData.dark(useMaterial3: true);
     // Font tematico (se fornito) applicato al textTheme, con fallback sicuro.
@@ -223,8 +236,15 @@ class AppTheme {
         backgroundColor: bg,
         foregroundColor: text,
         elevation: 0,
+        // v0.2.53: titleFont applica il font tematico al TITOLO della schermata
+        // (AppBar). Se null, lo style di default. Per Osservatorio Jupiter è
+        // '13 Misa' → il font si vede sui titoli (prima era hardcoded senza
+        // fontFamily, quindi il font non appariva).
         titleTextStyle: TextStyle(
-          color: text, fontWeight: FontWeight.w600, fontSize: 17,
+          color: text, fontWeight: FontWeight.w600,
+          fontSize: titleFont != null ? 20 : 17,
+          fontFamily: titleFont,
+          letterSpacing: titleFont != null ? 1.5 : null,
         ),
       ),
       cardTheme: CardThemeData(
