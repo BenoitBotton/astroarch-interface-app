@@ -6,7 +6,6 @@ import '../i18n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import 'shell_screen.dart';
 
 /// Schermata "Sessione" (v0.2.44): riepilogo della nottata in corso.
 /// - durata sessione (da connessione)
@@ -86,7 +85,7 @@ class _SessionScreenState extends State<SessionScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.menu), onPressed: openShellDrawer),
+        // v0.2.48: aperta da push → freccia indietro automatica (era hamburger).
         title: Row(children: [
           const Icon(Icons.nightlight, size: 18),
           const SizedBox(width: 8),

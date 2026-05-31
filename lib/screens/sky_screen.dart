@@ -8,7 +8,6 @@ import '../i18n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
-import 'shell_screen.dart';
 
 /// Planetario KStars (v0.2.40).
 /// Mostra il SkyMap live di KStars (vero rendering: stelle, costellazioni,
@@ -339,7 +338,8 @@ class _SkyScreenState extends State<SkyScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(icon: const Icon(Icons.menu), onPressed: openShellDrawer),
+        // v0.2.48: schermata aperta da push → freccia indietro automatica
+        // (prima c'era un hamburger inattivo, segnalato da Tucniak).
         title: Row(children: [
           const Icon(Icons.public, size: 20),
           const SizedBox(width: 8),

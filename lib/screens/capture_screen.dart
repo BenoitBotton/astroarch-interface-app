@@ -141,6 +141,12 @@ class _CaptureScreenState extends State<CaptureScreen> {
             onPressed: openShellDrawer),
         title: Text(cam == null ? 'Capture'.tr(context) : '${'Capture'.tr(context)} · $cam', overflow: TextOverflow.ellipsis),
         actions: [
+          // v0.2.48 (P6): carica una sequenza .esq dal Pi (richiesto da Tucniak)
+          IconButton(
+            tooltip: 'Carica sequenza dal Pi'.tr(context),
+            icon: const Icon(Icons.folder_open),
+            onPressed: _loadSequenceFromPi,
+          ),
           IconButton(
             tooltip: 'Preset'.tr(context),
             icon: const Icon(Icons.bookmark_border),
@@ -640,6 +646,66 @@ class _CaptureScreenState extends State<CaptureScreen> {
       } else {
         showSnack(context, '${'Errore: '.tr(context)}${r['load_response'] ?? r}', error: true);
       }
+    } on ApiException catch (e) {
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}${e.body}', error: true);
+    } catch (e) {
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
+    }
+  }
+
+  /// v0.2.48 (P6): mostra le sequenze .esq presenti sul Pi e ne carica una
+  /// in Ekos (loadSequenceQueue lato bridge). Conferma esplicita prima.
+  Future<void> _loadSequenceFromPi() async {
+    final s = context.read<AppState>();
+    if (s.api == null) return;
+    Map<String, dynamic>? res;
+    try {
+      res = await s.api!.listSequences();
+    } catch (e) {
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
+      return;
+    }
+    if (!mounted) return;
+    final items = (res['items'] as List?) ?? [];
+    if (items.isEmpty) {
+      showSnack(context, 'Nessuna sequenza .esq trovata sul Pi'.tr(context));
+      return;
+    }
+    showModalBottomSheet(context: context, backgroundColor: T.panel(context),
+      builder: (c) => SafeArea(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Padding(padding: const EdgeInsets.all(14),
+            child: Text('Carica sequenza dal Pi'.tr(context),
+                style: TextStyle(color: T.text(context), fontWeight: FontWeight.w700, fontSize: 16))),
+        Flexible(child: ListView(shrinkWrap: true, children: [
+          for (final it in items)
+            ListTile(
+              leading: Icon(Icons.queue, color: T.accent(context)),
+              title: Text(it['name'] ?? ''),
+              subtitle: Text('~/${it['dir'] ?? ''}',
+                  style: TextStyle(color: T.muted(context), fontSize: 11, fontFamily: 'monospace')),
+              onTap: () async {
+                Navigator.pop(c);
+                await _confirmLoadSequence(s, it['path'] ?? '', it['name'] ?? '');
+              },
+            ),
+        ])),
+      ])));
+  }
+
+  Future<void> _confirmLoadSequence(AppState s, String path, String name) async {
+    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
+      backgroundColor: T.panel(context),
+      title: Text('Caricare questa sequenza?'.tr(context)),
+      content: Text('$name\n\n${'Sostituirà la coda Capture attuale in Ekos.'.tr(context)}'),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(c, false), child: Text('ANNULLA'.tr(context))),
+        ElevatedButton(onPressed: () => Navigator.pop(c, true), child: Text('CARICA'.tr(context))),
+      ],
+    ));
+    if (ok != true) return;
+    try {
+      await s.api!.loadSequenceFile(path, autoStart: false);
+      if (mounted) showSnack(context, '${'Sequenza caricata: '.tr(context)}$name');
     } on ApiException catch (e) {
       if (mounted) showSnack(context, '${'Errore: '.tr(context)}${e.body}', error: true);
     } catch (e) {

@@ -58,6 +58,29 @@ class SettingsScreen extends StatelessWidget {
             ]),
           ),
           const SizedBox(height: 18),
+          // v0.2.48: dimensione testo (Tucniak: testo piccolo su tablet)
+          _sectionLabel(context, 'Dimensione testo'.tr(context)),
+          Container(
+            decoration: _cardDeco(context),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(children: [
+                Icon(Icons.format_size, color: T.accent(context), size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: SegmentedButton<double>(
+                  segments: [
+                    ButtonSegment(value: 1.0, label: Text('Normale'.tr(context))),
+                    ButtonSegment(value: 1.15, label: Text('Grande'.tr(context))),
+                    ButtonSegment(value: 1.3, label: Text('XL'.tr(context))),
+                  ],
+                  selected: {_nearestScale(s.textScale)},
+                  showSelectedIcon: false,
+                  onSelectionChanged: (sel) => s.setTextScale(sel.first),
+                )),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 18),
           _sectionLabel(context, 'Aspetto'.tr(context)),
           Container(
             decoration: _cardDeco(context),
@@ -198,6 +221,13 @@ class SettingsScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: T.line(c)),
       );
+
+  /// Mappa un valore di scala salvato sull'opzione più vicina del segmento
+  /// (evita "no segment selected" se il valore persistito non è esatto).
+  double _nearestScale(double v) {
+    const opts = [1.0, 1.15, 1.3];
+    return opts.reduce((a, b) => (v - a).abs() < (v - b).abs() ? a : b);
+  }
 }
 
 /// Schermata che mostra il QR generato dal bridge (con IP Tailscale).

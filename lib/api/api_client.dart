@@ -533,6 +533,16 @@ class ApiClient {
   // Files
   Future<Map<String, dynamic>> filesRecent({int limit = 50}) =>
       get('/api/files/recent', {'limit': '$limit'});
+  // v0.2.48 (P5): navigazione cartelle dentro la home del Pi.
+  Future<Map<String, dynamic>> filesBrowse({String path = '', bool onlyDirs = false, String exts = ''}) =>
+      get('/api/files/browse', {
+        'path': path, 'only_dirs': '$onlyDirs', if (exts.isNotEmpty) 'exts': exts,
+      });
+  Future<Map<String, dynamic>> filesRoots() => get('/api/files/roots');
+  // v0.2.48 (P6): sequenze .esq sul Pi.
+  Future<Map<String, dynamic>> listSequences() => get('/api/capture/list_sequences');
+  Future<Map<String, dynamic>> loadSequenceFile(String path, {bool autoStart = false}) =>
+      post('/api/capture/load_sequence_file', {'path': path, 'auto_start': autoStart});
   Future<Uint8List> filePreview(String path, {bool thumbnail = false}) =>
       getBytes('/api/files/preview', {'path': path, 'thumbnail': '$thumbnail'});
   Future<Map<String, dynamic>> fileDelete(String path) async {

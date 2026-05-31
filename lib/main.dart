@@ -33,6 +33,21 @@ class AstroarchApp extends StatelessWidget {
       title: 'Astroarch Interface',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.forMode(state.themeMode),
+      // v0.2.48: scala testo globale regolabile (segnalato da Tucniak: testo
+      // piccolo su tablet). Combina la scala di sistema con il moltiplicatore
+      // scelto in Settings (default 1.15 → leggermente più grande del base).
+      builder: (context, child) {
+        final sysScale = MediaQuery.textScalerOf(context);
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            textScaler: sysScale.clamp(
+              minScaleFactor: state.textScale,
+              maxScaleFactor: state.textScale * 1.6,
+            ),
+          ),
+          child: child ?? const SizedBox(),
+        );
+      },
       // Avvio:
       //  - già connesso            → ShellScreen
       //  - non connesso + profili salvati → ConnectionsScreen (seleziona un

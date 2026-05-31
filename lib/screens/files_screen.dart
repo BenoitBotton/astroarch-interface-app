@@ -6,6 +6,7 @@ import '../i18n/strings.dart';
 import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
+import 'folder_browser_screen.dart';
 
 class FilesScreen extends StatefulWidget {
   const FilesScreen({super.key});
@@ -157,6 +158,13 @@ class _FilesScreenState extends State<FilesScreen> {
                 ),
               ]
             : [
+                // v0.2.48 (P5): naviga le cartelle sul Pi (richiesto da Tucniak)
+                IconButton(
+                  tooltip: 'Sfoglia cartelle'.tr(context),
+                  icon: const Icon(Icons.folder_open),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(
+                      builder: (_) => const FolderBrowserScreen(exts: 'fits,fit,esq'))),
+                ),
                 IconButton(onPressed: _refresh, icon: const Icon(Icons.refresh)),
               ],
       ),

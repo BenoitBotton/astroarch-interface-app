@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api/api_client.dart';
@@ -63,6 +64,9 @@ class AppState extends ChangeNotifier {
   set nightMode(bool v) => themeMode = v ? AppThemeMode.night : AppThemeMode.pro;
   // v0.2.44: notifiche locali on/off (persistente).
   bool notificationsEnabled = true;
+  // v0.2.48: scala testo globale (Tucniak: testo piccolo su tablet).
+  // 1.0 Normale · 1.15 Grande (default) · 1.3 Molto grande. Persistente.
+  double textScale = 1.15;
   // Lingua UI — IT è default ("Zarletti-Osservatorio Jupiter" è italiano).
   // Cambiabile da Settings; persistente via SharedPreferences (chiave 'locale').
   AppLocale locale = AppLocale.it;
@@ -249,6 +253,7 @@ class AppState extends ChangeNotifier {
           ? AppThemeMode.night : AppThemeMode.pro;
     }
     notificationsEnabled = p.getBool('notifications') ?? true;
+    textScale = p.getDouble('textScale') ?? 1.15;
     final loc = p.getString('locale');
     switch (loc) {
       case 'en':
@@ -257,8 +262,16 @@ class AppState extends ChangeNotifier {
       case 'fr':
         locale = AppLocale.fr;
         break;
-      default:
+      case 'it':
         locale = AppLocale.it;
+        break;
+      default:
+        // v0.2.48: PRIMO AVVIO (nessuna lingua salvata) → rileva la lingua
+        // di sistema. it→Italiano, fr→Français, tutto il resto→English.
+        // Segnalato da Tucniak: l'app partiva sempre in italiano anche su
+        // dispositivi in inglese. La scelta viene persistita al primo
+        // setLocale o al primo savePrefs, quindi questo è solo il default.
+        locale = _detectSystemLocale();
         break;
     }
     selectedCamera = p.getString('selectedCamera');
@@ -299,6 +312,7 @@ class AppState extends ChangeNotifier {
       AppLocale.fr => 'fr',
     };
     await p.setString('locale', localeCode);
+    await p.setDouble('textScale', textScale);
     if (selectedCamera != null) await p.setString('selectedCamera', selectedCamera!); else await p.remove('selectedCamera');
     if (selectedMount != null) await p.setString('selectedMount', selectedMount!); else await p.remove('selectedMount');
     if (selectedFocuser != null) await p.setString('selectedFocuser', selectedFocuser!); else await p.remove('selectedFocuser');
@@ -520,6 +534,27 @@ class AppState extends ChangeNotifier {
   /// v0.2.44: abilita/disabilita le notifiche locali.
   void setNotificationsEnabled(bool v) {
     notificationsEnabled = v;
+    savePrefs();
+    notifyListeners();
+  }
+
+  /// Rileva la lingua del dispositivo (solo al primo avvio, quando l'utente
+  /// non ha ancora scelto). it→it, fr→fr, qualunque altra→en.
+  static AppLocale _detectSystemLocale() {
+    try {
+      final code = ui.PlatformDispatcher.instance.locale.languageCode.toLowerCase();
+      return switch (code) {
+        'it' => AppLocale.it,
+        'fr' => AppLocale.fr,
+        _ => AppLocale.en,
+      };
+    } catch (_) {
+      return AppLocale.it;
+    }
+  }
+
+  void setTextScale(double v) {
+    textScale = v;
     savePrefs();
     notifyListeners();
   }
