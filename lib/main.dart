@@ -54,10 +54,12 @@ class AstroarchApp extends StatelessWidget {
           content = Stack(fit: StackFit.expand, children: [
             Image.asset(AppTheme.ojPhotoAsset, fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => const ColoredBox(color: AppTheme.ojBg)),
+            // v0.2.52: scrim LEGGERO → la foto resta protagonista. La
+            // leggibilità del testo è garantita dalle card semi-trasparenti.
             const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
               begin: Alignment.topCenter, end: Alignment.bottomCenter,
-              colors: [Color(0xB3000000), Color(0xCC04060C), Color(0xE604060C)],
-              stops: [0.0, 0.45, 1.0],
+              colors: [Color(0x26000000), Color(0x59040C0C), Color(0x8C04060C)],
+              stops: [0.0, 0.5, 1.0],
             ))),
             content,
           ]);

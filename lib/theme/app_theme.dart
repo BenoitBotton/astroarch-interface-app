@@ -171,23 +171,12 @@ class AppTheme {
       GoogleFonts.antonioTextTheme(base);
 
   /// Font "13 Misa" (Zane Townsend / Unrender) per il tema Osservatorio Jupiter.
-  /// È un font DISPLAY decorativo (lettere con orbite) → applicato SOLO a
-  /// titoli/headline/display per dare carattere senza rovinare la leggibilità
-  /// di numeri e testo (RA/Dec, coordinate, liste restano col font di sistema).
-  static TextTheme _osservatorioFont(TextTheme base) {
-    const fam = 'Misa13';
-    TextStyle? m(TextStyle? s) => s?.copyWith(fontFamily: fam, letterSpacing: 1.0);
-    return base.copyWith(
-      displayLarge: m(base.displayLarge),
-      displayMedium: m(base.displayMedium),
-      displaySmall: m(base.displaySmall),
-      headlineLarge: m(base.headlineLarge),
-      headlineMedium: m(base.headlineMedium),
-      headlineSmall: m(base.headlineSmall),
-      titleLarge: m(base.titleLarge),
-      titleMedium: m(base.titleMedium),
-    );
-  }
+  /// v0.2.52: applicato a TUTTO il textTheme (richiesto dall'utente: voleva
+  /// vederlo ovunque, non solo sui titoli). È un font display decorativo con
+  /// orbite → look sci-fi marcato su tutta l'app in questo tema specifico.
+  /// Gli altri 5 temi usano i loro font leggibili per l'uso operativo.
+  static TextTheme _osservatorioFont(TextTheme base) =>
+      base.apply(fontFamily: 'Misa13');
 
   static ThemeData buildInterstellar() => _build(
         bg: isBg, panel: isPanel, panel2: isPanel2, line: isLine,
