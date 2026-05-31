@@ -136,6 +136,10 @@ class AppTheme {
         bg: ojBg, panel: ojPanel, panel2: ojPanel2, line: ojLine,
         text: ojText, muted: ojMuted, accent: ojAccent, accent2: ojAccent2,
         ok: ojOk, err: ojErr,
+        // scaffold TRASPARENTE: la foto di sfondo (applicata globalmente nel
+        // MaterialApp builder) traspare in OGNI schermata. Le card sono
+        // semi-trasparenti (ojPanel = 0xCC…) così la foto si intravede sotto.
+        scaffoldColor: const Color(0x00000000),
       );
 
   static ThemeData buildPro() => _build(
@@ -185,6 +189,7 @@ class AppTheme {
     required Color ok, required Color err,
     TextTheme Function(TextTheme)? fontBuilder,
     double cardRadius = 14,
+    Color? scaffoldColor,
   }) {
     final base = ThemeData.dark(useMaterial3: true);
     // Font tematico (se fornito) applicato al textTheme, con fallback sicuro.
@@ -193,7 +198,7 @@ class AppTheme {
       try { themedText = fontBuilder(base.textTheme); } catch (_) {}
     }
     return base.copyWith(
-      scaffoldBackgroundColor: bg,
+      scaffoldBackgroundColor: scaffoldColor ?? bg,
       colorScheme: ColorScheme.dark(
         surface: bg,
         primary: accent,
@@ -336,21 +341,10 @@ class _StarfieldBackgroundState extends State<StarfieldBackground>
   @override
   Widget build(BuildContext context) {
     if (!widget.mode.isScenic) return widget.child;
-    // Tema con foto reale: sfondo = asset + scrim scuro per leggibilità.
-    if (widget.mode.hasPhotoBackground) {
-      return Stack(fit: StackFit.expand, children: [
-        Image.asset(AppTheme.ojPhotoAsset, fit: BoxFit.cover,
-            // fallback se l'asset mancasse: niente crash, solo nero
-            errorBuilder: (_, __, ___) => const ColoredBox(color: AppTheme.ojBg)),
-        // scrim graduato: più scuro in basso (dove c'è più UI/testo)
-        const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
-          begin: Alignment.topCenter, end: Alignment.bottomCenter,
-          colors: [Color(0x99000000), Color(0xCC04060C), Color(0xEE04060C)],
-          stops: [0.0, 0.5, 1.0],
-        ))),
-        widget.child,
-      ]);
-    }
+    // v0.2.50: il tema foto (osservatorioJupiter) ha lo sfondo applicato
+    // GLOBALMENTE nel MaterialApp builder (tutte le schermate). Qui niente
+    // da fare → evita doppio rendering.
+    if (widget.mode.hasPhotoBackground) return widget.child;
     if (_ctrl == null) {
       // statico (deepSpace)
       return Stack(children: [

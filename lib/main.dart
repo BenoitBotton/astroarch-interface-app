@@ -38,7 +38,7 @@ class AstroarchApp extends StatelessWidget {
       // scelto in Settings (default 1.15 → leggermente più grande del base).
       builder: (context, child) {
         final sysScale = MediaQuery.textScalerOf(context);
-        return MediaQuery(
+        Widget content = MediaQuery(
           data: MediaQuery.of(context).copyWith(
             textScaler: sysScale.clamp(
               minScaleFactor: state.textScale,
@@ -47,6 +47,22 @@ class AstroarchApp extends StatelessWidget {
           ),
           child: child ?? const SizedBox(),
         );
+        // v0.2.50: tema con foto reale → sfondo GLOBALE (tutte le schermate).
+        // Foto + scrim graduato sotto a tutto; gli Scaffold hanno bg
+        // trasparente così la foto traspare ovunque, restando leggibile.
+        if (state.themeMode.hasPhotoBackground) {
+          content = Stack(fit: StackFit.expand, children: [
+            Image.asset(AppTheme.ojPhotoAsset, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const ColoredBox(color: AppTheme.ojBg)),
+            const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Color(0xB3000000), Color(0xCC04060C), Color(0xE604060C)],
+              stops: [0.0, 0.45, 1.0],
+            ))),
+            content,
+          ]);
+        }
+        return content;
       },
       // Avvio:
       //  - già connesso            → ShellScreen
