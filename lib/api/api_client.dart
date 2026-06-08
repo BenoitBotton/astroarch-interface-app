@@ -141,6 +141,10 @@ class ApiClient {
 
   // --- High-level helpers ---
   Future<Map<String, dynamic>> snapshot() => get('/api/system/snapshot');
+  /// v0.2.55: ultimo frame JPEG su richiesta (per ricaricarlo dopo il rientro
+  /// da background, quando la WS non lo ri-invia). Lancia ApiException(404)
+  /// se non c'è ancora nessun frame.
+  Future<Uint8List> lastFrame() => getBytes('/api/system/last_frame');
   Future<Map<String, dynamic>> info() => get('/api/system/info');
   Future<Map<String, dynamic>> connections() => get('/api/system/connections');
   Future<Map<String, dynamic>> cameraRoles() => get('/api/system/camera_roles');

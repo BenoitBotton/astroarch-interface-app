@@ -43,6 +43,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     _refreshEkosCap();
     _diskPoll = Timer.periodic(const Duration(seconds: 30), (_) => _refreshDisk());
     _refreshDisk();
+    // v0.2.55: se c'è un frame sul bridge (meta presente) ma non abbiamo
+    // ancora il JPEG (es. arrivato mentre eravamo in background / prima
+    // dell'apertura), scaricalo via REST per popolare subito il monitor.
+    Future.microtask(() {
+      final s = context.read<AppState>();
+      if (s.lastFrameJpeg == null && s.lastFrameMeta.isNotEmpty) s.fetchLastFrame();
+    });
   }
 
   Future<void> _refreshEkosCap() async {

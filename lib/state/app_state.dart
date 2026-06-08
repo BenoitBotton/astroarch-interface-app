@@ -717,9 +717,27 @@ class AppState extends ChangeNotifier {
     // 2) Riavvia le WebSocket (nuovo socket, backoff azzerato).
     await _wsState?.restart();
     await _wsFrames?.restart();
-    // 3) Best-effort: ri-chiedi i ruoli camera (potrebbero essere cambiati).
+    // 3) v0.2.55: ricarica l'ULTIMO FRAME via REST. La WS /ws/frames non
+    //    re-invia l'ultimo frame già broadcastato → se il frame è arrivato
+    //    mentre l'app era in background, la Dashboard resterebbe senza
+    //    immagine. Qui lo recuperiamo se lo snapshot indica che ce n'è uno.
+    if (ok && lastFrameMeta.isNotEmpty) await fetchLastFrame();
+    // 4) Best-effort: ri-chiedi i ruoli camera (potrebbero essere cambiati).
     if (ok) _refreshCameraRoles();
     notifyListeners();
+  }
+
+  /// Scarica l'ultimo frame JPEG via REST e aggiorna la Dashboard. Silenzioso
+  /// su 404 (nessun frame ancora) o errori di rete.
+  Future<void> fetchLastFrame() async {
+    if (api == null) return;
+    try {
+      final bytes = await api!.lastFrame();
+      lastFrameJpeg = bytes;
+      notifyListeners();
+    } catch (_) {
+      // 404 = nessun frame disponibile, oppure rete: ignora
+    }
   }
 
   Future<void> disconnect() async {
