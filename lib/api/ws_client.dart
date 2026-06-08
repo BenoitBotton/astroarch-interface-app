@@ -13,6 +13,7 @@ class WsClient {
   final void Function(String state)? onState;
   WebSocketChannel? _ch;
   StreamSubscription? _sub;
+  Timer? _reconnectTimer;
   bool _stop = false;
   Duration _backoff = const Duration(seconds: 1);
   static const Duration _maxBackoff = Duration(seconds: 30);
@@ -63,9 +64,25 @@ class WsClient {
     _sub?.cancel();
     _sub = null;
     _ch = null;
-    Future.delayed(_backoff, _connect);
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(_backoff, _connect);
     final ms = (_backoff.inMilliseconds * 2).clamp(1000, _maxBackoff.inMilliseconds);
     _backoff = Duration(milliseconds: ms);
+  }
+
+  /// v0.2.54: forza una riconnessione IMMEDIATA, resettando il backoff e
+  /// chiudendo il socket corrente (che dopo un ritorno dal background può
+  /// essere "half-open": sembra connesso ma è morto). Chiamato quando l'app
+  /// torna in foreground → niente attesa del backoff (fino a 30s).
+  Future<void> restart() async {
+    _reconnectTimer?.cancel();
+    await _sub?.cancel();
+    _sub = null;
+    try { await _ch?.sink.close(ws_status.normalClosure); } catch (_) {}
+    _ch = null;
+    _backoff = const Duration(seconds: 1);
+    _stop = false;
+    _connect();
   }
 
   void send(String text) {
@@ -74,6 +91,8 @@ class WsClient {
 
   Future<void> stop() async {
     _stop = true;
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
     onState?.call('disconnected');
     await _sub?.cancel();
     await _ch?.sink.close(ws_status.normalClosure);

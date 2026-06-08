@@ -23,8 +23,35 @@ void main() async {
   );
 }
 
-class AstroarchApp extends StatelessWidget {
+class AstroarchApp extends StatefulWidget {
   const AstroarchApp({super.key});
+  @override
+  State<AstroarchApp> createState() => _AstroarchAppState();
+}
+
+class _AstroarchAppState extends State<AstroarchApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
+    // v0.2.54: al rientro in foreground (dopo aver aperto un'altra app o
+    // risposto al telefono) ri-sincronizza subito con AstroArch — le
+    // WebSocket sospese in background restano altrimenti "half-open" e
+    // l'app sembra bloccata.
+    if (lifecycle == AppLifecycleState.resumed) {
+      context.read<AppState>().onAppResumed();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

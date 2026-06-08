@@ -704,6 +704,24 @@ class AppState extends ChangeNotifier {
     }
   }
 
+  /// v0.2.54: chiamato quando l'app torna in FOREGROUND (lifecycle resumed).
+  /// In background Android sospende le WebSocket, che possono restare
+  /// "half-open" (sembrano connesse ma sono morte: niente onDone/onError).
+  /// Qui forziamo riconnessione IMMEDIATA dei due socket (reset backoff) +
+  /// un refresh REST → l'app si ri-sincronizza subito con AstroArch invece
+  /// di restare bloccata. Risolve "esco e rientro nell'app e resta fermo".
+  Future<void> onAppResumed() async {
+    if (api == null) return;
+    // 1) Verifica veloce che il bridge sia ancora raggiungibile + refresh stato.
+    final ok = await refreshSnapshot();
+    // 2) Riavvia le WebSocket (nuovo socket, backoff azzerato).
+    await _wsState?.restart();
+    await _wsFrames?.restart();
+    // 3) Best-effort: ri-chiedi i ruoli camera (potrebbero essere cambiati).
+    if (ok) _refreshCameraRoles();
+    notifyListeners();
+  }
+
   Future<void> disconnect() async {
     await _wsState?.stop();
     await _wsFrames?.stop();
