@@ -582,6 +582,32 @@ class _CaptureScreenState extends State<CaptureScreen> {
             ),
           ),
           const SizedBox(height: 8),
+          // Opzione 3 (v0.2.56): avvia la sequenza GIÀ pianificata in Ekos
+          // (nessun clear/load: usa la Capture queue configurata a mano nella
+          // UI di Ekos sul desktop). Ideale quando hai già preparato tutto lì.
+          InkWell(
+            onTap: () => Navigator.pop(c, 'existing'),
+            child: Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: T.ok(context).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: T.ok(context).withValues(alpha: 0.6)),
+              ),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Row(children: [
+                  Icon(Icons.playlist_play, color: T.ok(context), size: 16),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text('Avvia sequenza pianificata in EKOS'.tr(context),
+                      style: TextStyle(color: T.ok(context), fontWeight: FontWeight.w700))),
+                ]),
+                const SizedBox(height: 4),
+                Text('Premi play sulla sequenza che hai già preparato nella Capture queue di Ekos. Non tocca puntamento, guida PHD2, cooler né la sequenza: usa esattamente la tua configurazione. Il dither segue le impostazioni di Ekos.'.tr(context),
+                    style: TextStyle(color: T.muted(context), fontSize: 11)),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 8),
           Text(filterDev == null
               ? 'No filter wheel: filter ignorato per ogni job.'.tr(context)
               : '${'Filter wheel: '.tr(context)}$filterDev',
@@ -600,8 +626,45 @@ class _CaptureScreenState extends State<CaptureScreen> {
       ));
     } else if (choice == 'ekos') {
       await _runViaEkos(s);
+    } else if (choice == 'existing') {
+      await _runExistingEkos(s);
     } else if (choice == 'direct') {
       await _runner.run(camera: camera, filterWheel: filterDev);
+    }
+  }
+
+  /// v0.2.56: avvia la sequenza GIÀ caricata nella Capture queue di Ekos
+  /// (nessun clear/load dei job dell'app). È la modalità più non-invasiva:
+  /// rispetta puntamento, guida PHD2, cooler e la sequenza già pianificata
+  /// a mano nella UI di Ekos sul desktop.
+  Future<void> _runExistingEkos(AppState s) async {
+    if (s.api == null) return;
+    try {
+      final alive = await s.api!.captureEkosAlive();
+      if (alive['alive'] != true) {
+        if (!mounted) return;
+        showSnack(context, 'Ekos non raggiungibile via DBus'.tr(context), error: true);
+        return;
+      }
+      final r = await s.api!.captureEkosStartExisting();
+      if (!mounted) return;
+      if (r['ok'] == true && r['started'] == true) {
+        final n = r['job_count'] ?? '?';
+        final dith = r['auto_dither_enabled'] == true
+            ? 'dither ON'.tr(context)
+            : 'dither OFF'.tr(context);
+        showSnack(context,
+            '${'Sequenza Ekos avviata · '.tr(context)}$n ${'job · '.tr(context)}$dith');
+        // Refresh immediato del banner "SEQUENZA EKOS IN CORSO" + tasto FERMA.
+        Future.delayed(const Duration(milliseconds: 800), _refreshEkosStatus);
+      } else {
+        showSnack(context, '${'Errore: '.tr(context)}${r['start_response'] ?? r}', error: true);
+      }
+    } on ApiException catch (e) {
+      // 409 = nessuna sequenza caricata in Ekos: messaggio guida esplicito.
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}${e.body}', error: true);
+    } catch (e) {
+      if (mounted) showSnack(context, '${'Errore: '.tr(context)}$e', error: true);
     }
   }
 

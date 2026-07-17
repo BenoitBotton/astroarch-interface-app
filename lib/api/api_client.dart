@@ -342,6 +342,17 @@ class ApiClient {
     if (ditherFrequency != null) 'ditherFrequency': ditherFrequency,
     if (ditherRaOnly != null) 'ditherRaOnly': ditherRaOnly,
   });
+  /// v0.2.56: avvia la sequenza GIÀ pianificata nella Capture queue di Ekos,
+  /// senza clear/load dei job dell'app. Rispetta esattamente quello che
+  /// l'utente ha configurato a mano nella UI di Ekos sul desktop.
+  /// Se [autoDither] è null, il bridge legge DitherEnabled da Ekos [Guide].
+  Future<Map<String, dynamic>> captureEkosStartExisting({
+    String train = '',
+    bool? autoDither,
+  }) => post('/api/capture/ekos_start_existing', {
+    'train': train,
+    if (autoDither != null) 'auto_dither': autoDither,
+  });
   /// v0.2.36: legge i parametri dither correntemente configurati in Ekos
   /// (kstarsrc [Guide]). Usato dal pannello "Dither config" per il
   /// pulsante "Sincronizza da Ekos".

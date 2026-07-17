@@ -512,6 +512,13 @@ const Map<String, String> enStrings = {
     'DIRETTO (via INDI)': 'DIRECT (via INDI)',
     'Comando diretto al driver INDI. Ekos non vede la sequenza nella sua UI.':
         'Direct command to INDI driver. Ekos does not see the sequence in its UI.',
+    'Avvia sequenza pianificata in EKOS': 'Start sequence planned in EKOS',
+    'Premi play sulla sequenza che hai già preparato nella Capture queue di Ekos. Non tocca puntamento, guida PHD2, cooler né la sequenza: usa esattamente la tua configurazione. Il dither segue le impostazioni di Ekos.':
+        'Press play on the sequence you already prepared in the Ekos Capture queue. Does not touch pointing, PHD2 guiding, cooler or the sequence: uses your exact configuration. Dither follows Ekos settings.',
+    'Sequenza Ekos avviata · ': 'Ekos sequence started · ',
+    'job · ': 'job · ',
+    'dither ON': 'dither ON',
+    'dither OFF': 'dither OFF',
     'No filter wheel: filter ignorato per ogni job.': 'No filter wheel: filter ignored for each job.',
     'Filter wheel: ': 'Filter wheel: ',
     'Ekos non raggiungibile via DBus': 'Ekos unreachable via DBus',
