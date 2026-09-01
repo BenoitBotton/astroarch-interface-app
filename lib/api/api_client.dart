@@ -442,6 +442,14 @@ class ApiClient {
 
   // Guide
   Future<Map<String, dynamic>> guideStatus() => get('/api/guide/status');
+  // v0.2.57: guider INTERNO di Ekos (via DBus lato bridge). Alternativo a PHD2.
+  Future<Map<String, dynamic>> guideBackend() => get('/api/guide/backend');
+  Future<Map<String, dynamic>> guideEkosStatus() => get('/api/guide/ekos_status');
+  Future<void> guideEkosStart() => post('/api/guide/ekos_start');
+  Future<void> guideEkosStop() => post('/api/guide/ekos_stop');
+  Future<void> guideEkosCalibrate() => post('/api/guide/ekos_calibrate');
+  Future<void> guideEkosDither() => post('/api/guide/ekos_dither');
+  Future<void> guideEkosLoop() => post('/api/guide/ekos_loop');
   Future<void> guideStart({Map<String, dynamic>? p}) => post('/api/guide/start', p);
   Future<void> guideStop() => post('/api/guide/stop');
   Future<Map<String, dynamic>> guideDither({

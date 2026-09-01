@@ -10,6 +10,7 @@ import '../state/app_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import 'shell_screen.dart';
+import 'guide_ekos_view.dart';
 
 class GuideScreen extends StatefulWidget {
   const GuideScreen({super.key});
@@ -18,6 +19,28 @@ class GuideScreen extends StatefulWidget {
 }
 
 class _GuideScreenState extends State<GuideScreen> {
+  // v0.2.57: quale guider usa Ekos ('internal' | 'phd2' | 'linguider' | null).
+  // Rilevato al primo build; se 'internal' mostriamo la vista dedicata.
+  String? _backend;
+
+  @override
+  void initState() {
+    super.initState();
+    _detectBackend();
+  }
+
+  Future<void> _detectBackend() async {
+    final s = context.read<AppState>();
+    if (s.api == null) return;
+    try {
+      final r = await s.api!.guideBackend();
+      if (mounted) setState(() => _backend = r['backend'] as String?);
+    } catch (_) {
+      // bridge senza endpoint /backend (vecchio) o errore → fallback PHD2.
+      if (mounted) setState(() => _backend = null);
+    }
+  }
+
   Future<void> _safe(Future Function() fn, String msg) async {
     try { await fn(); if (mounted) showSnack(context, msg); }
     on ApiException catch (e) {
@@ -40,6 +63,11 @@ class _GuideScreenState extends State<GuideScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // v0.2.57: se Ekos guida col guider INTERNO, vista dedicata; altrimenti
+    // (PHD2, o backend non ancora rilevato) la vista PHD2 storica.
+    if (_backend == 'internal') {
+      return EkosGuideView(onReload: _detectBackend);
+    }
     final s = context.watch<AppState>();
     final live = s.phd2Live;
     final connected = s.phd2Conn == 'connected';

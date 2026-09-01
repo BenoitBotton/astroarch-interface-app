@@ -516,6 +516,14 @@ const Map<String, String> frStrings = {
   'job · ': 'tâches · ',
   'dither ON': 'dither ON',
   'dither OFF': 'dither OFF',
+  'Guida interna di Ekos (non PHD2). Comandi via Ekos.Guide.':
+      'Guidage interne d\'Ekos (pas PHD2). Commandes via Ekos.Guide.',
+  'Ricontrolla guider': 'Revérifier le guide',
+  'Guida avviata': 'Guidage démarré',
+  'Loop avviato': 'Boucle démarrée',
+  'Calibrazione avviata': 'Calibration démarrée',
+  'Nota: la vista PHD2 completa (grafico, star image, full frame) è disponibile quando in Ekos il guider è impostato su PHD2.':
+      'Note : la vue PHD2 complète (graphique, image d\'étoile, image complète) est disponible quand le guide d\'Ekos est réglé sur PHD2.',
   'No filter wheel: filter ignorato per ogni job.':
       'Pas de roue de filtres: filtre ignoré pour chaque tâche.',
   'Filter wheel: ': 'Roue de filtres: ',
