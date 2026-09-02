@@ -195,10 +195,10 @@ const Map<String, String> frStrings = {
   'Cartella vuota': 'Dossier vide',
   'Carica sequenza dal Pi': 'Charger une séquence du Pi',
   'Nessuna sequenza .esq trovata sul Pi': 'Aucune séquence .esq trouvée sur le Pi',
-  'Caricare questa sequenza?': 'Charger cette séquence ?',
+  'Caricare questa sequenza?': 'Charger cette séquence?',
   'Sostituirà la coda Capture attuale in Ekos.': 'Cela remplacera la file Capture actuelle dans Ekos.',
   'CARICA': 'CHARGER',
-  'Sequenza caricata: ': 'Séquence chargée : ',
+  'Sequenza caricata: ': 'Séquence chargée: ',
   'INDI Logs': 'Logs INDI',
   'Activity Log (chiamate API)': 'Journal des activités (appels API)',
 
